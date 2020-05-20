@@ -71,7 +71,7 @@ def basic_meta(entry):  # ->
 def mentions_keyword(entry):  # ->
     d = {}
 
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817":
+    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425":
         k = keyword.lower()
 
         for field in 'title', 'summary':
