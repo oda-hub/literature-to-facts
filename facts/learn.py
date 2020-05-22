@@ -114,7 +114,7 @@ def workflows(entry, output='n3', boring_limit=2):
                         _v = "%.20lg" % _v
                     else:
                         _v = str(_v)
-                        _v = re.sub(r"[\$\\\"]", "", _v)
+                        _v = re.sub(r"[\$\\\"\n\r]", "", _v)
                         _v = "\""+str(_v)+"\""
 
                     data = f'<{paper_ns}arxiv{paper_id}> <{paper_ns}{k}> {_v}'
@@ -186,7 +186,7 @@ def workflows_by_entry(nthreads=1):
             raise Exception()
     else:
         for fact in facts:
-            logger.info(f"fact {fact}")
+            logger.info(f"fact {repr(fact)}")
             try:
                 G.update(f'INSERT DATA {{ {fact} }}')
             except Exception as e:
@@ -205,6 +205,19 @@ def learn(workers):
     logger.info(f"read in total {len(t)}")
 
     open("knowledge.n3", "w").write(t)
+
+@cli.command()
+def publish():
+    import odakb.sparql
+
+    D = open("knowledge.n3").readlines()
+
+    odakb.sparql.default_prefixes.append("\n".join([d.strip().replace("@prefix","PREFIX").strip(".") for d in D if 'prefix' in d]))
+
+    odakb.sparql.insert(
+                "\n".join([d.strip() for d in D if 'prefix' not in d])
+                
+            )
 
 
 @cli.command()
