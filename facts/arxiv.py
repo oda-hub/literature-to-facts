@@ -32,20 +32,25 @@ class BoringPaper(Exception):
 @click.option("-c", "--category", default="astro-ph")
 @click.option("-n", "--max-results", default=10)
 def fetch(search_string, max_results, category):
-    params = dict(
-        search_query=f'{search_string}',
-        sortBy='lastUpdatedDate',
-        sortOrder='descending',
-        max_results=max_results
-    )
 
-    r = requests.get('http://export.arxiv.org/api/query?'+ urllib.parse.urlencode(params, doseq=True))
+    def getBy(sortBy):
+        params = dict(
+            search_query=f'{search_string}',
+            sortBy=sortBy,
+            sortOrder='descending',
+            max_results=max_results
+        )
 
-    feed = feedparser.parse(r.text)
-    json.dump(feed, open("recent.json", "w"))
+        r = requests.get('http://export.arxiv.org/api/query?'+ urllib.parse.urlencode(params, doseq=True))
 
-    for entry in feed['entries']:
-        logger.debug(f'fetched {entry["id"].split("/")[-1]} ({entry["updated"]}): {entry["title"]}')
+        feed = feedparser.parse(r.text)
+        json.dump(feed, open(f"recent-{sortBy}.json", "w"))
+
+        for entry in feed['entries']:
+            logger.debug(f'fetched {entry["id"].split("/")[-1]} ({entry["updated"]}): {entry["title"]}')
+
+    getBy("lastUpdatedDate")
+    getBy("submittedDate")
 
 @cli.command()
 def fetch_recent():

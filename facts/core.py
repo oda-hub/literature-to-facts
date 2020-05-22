@@ -83,6 +83,11 @@ def workflows_for_input(entry, output='list'):
                     vs = [v]
 
                 for _v in vs:
+                    try:
+                        _v = float(_v)
+                    except:
+                        pass
+
                     if isinstance(_v, float):
                         _v = "%.20lg" % _v
                     else:
@@ -100,7 +105,7 @@ def workflows_for_input(entry, output='list'):
 
     logger.info(f"{c_id} facts {len(facts)}")
 
-    if len(facts)<4:
+    if len(facts)<5:
         return c_id, []
 
     print("\n".join(facts))
