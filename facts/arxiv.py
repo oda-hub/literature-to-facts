@@ -7,6 +7,7 @@ import requests
 import feedparser
 import click
 import time
+import urllib.parse
 from datetime import datetime
 
 from facts.core import workflow
@@ -28,9 +29,23 @@ class BoringPaper(Exception):
 
 @cli.command()
 @click.option("-s", "--search-string")
-def fetch(search_string):
-    r = requests.get('http://export.arxiv.org/api/query?search_query=all:' + search_string)
-    json.dump(feedparser.parse(r.text), open("search.json", "w"))
+@click.option("-c", "--category", default="astro-ph")
+@click.option("-n", "--max-results", default=10)
+def fetch(search_string, max_results, category):
+    params = dict(
+        search_query=f'{search_string}',
+        sortBy='lastUpdatedDate',
+        sortOrder='descending',
+        max_results=max_results
+    )
+
+    r = requests.get('http://export.arxiv.org/api/query?'+ urllib.parse.urlencode(params, doseq=True))
+
+    feed = feedparser.parse(r.text)
+    json.dump(feed, open("recent.json", "w"))
+
+    for entry in feed['entries']:
+        logger.debug(f'fetched {entry["id"].split("/")[-1]} ({entry["updated"]}): {entry["title"]}')
 
 @cli.command()
 def fetch_recent():
@@ -39,7 +54,9 @@ def fetch_recent():
 
 @workflow
 def basic_meta(entry: PaperEntry):  # ->
-    return dict(location=entry['id'], title=entry['title'])
+    return dict(
+            location=entry['id'], 
+            title=re.sub(r"[\n\r]", " ", entry['title']))
 
 
 @workflow

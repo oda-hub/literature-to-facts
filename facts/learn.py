@@ -177,11 +177,22 @@ def workflows_by_entry(nthreads=1):
     G = rdflib.Graph()
     G.bind('paper', rdflib.Namespace('http://odahub.io/ontology/paper#'))
 
-    try:
-        G.update('INSERT DATA { '+" .\n".join(facts) + '}')
-    except Exception as e:
-        logger.error(f"problem {e}  adding \"{s}\"")
-        raise Exception()
+
+    if False:
+        try:
+            G.update('INSERT DATA { '+" .\n".join(facts) + '}')
+        except Exception as e:
+            logger.error(f"problem {e}  adding \"{s}\"")
+            raise Exception()
+    else:
+        for fact in facts:
+            logger.info(f"fact {fact}")
+            try:
+                G.update(f'INSERT DATA {{ {fact} }}')
+            except Exception as e:
+                logger.error(f'problem {e}  adding "{fact}"')
+                raise 
+
 
     return G.serialize(format='n3').decode()
 
