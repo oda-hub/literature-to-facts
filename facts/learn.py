@@ -12,6 +12,9 @@ import rdflib # type: ignore
 import time
 import multiprocessing
 import threading
+from facts.core import workflow
+import facts.core
+import facts.arxiv
 from colorama import Fore, Style # type: ignore
 
 logging.basicConfig(level=logging.INFO,
@@ -23,18 +26,7 @@ logger = logging.getLogger()
 
 
 
-workflow_context = []
-
 PaperEntry = typing.NewType("PaperEntry", dict)
-
-def workflow(f):
-    setattr(sys.modules[f.__module__], f.__name__[1:], f)
-    workflow_context.append(dict(
-                name=f.__name__, 
-                function=f,
-                signature=f.__annotations__,
-            ))
-    return f
 
 
 @click.group()
@@ -61,146 +53,14 @@ def fetch_recent():
     r = requests.get('http://arxiv.org/rss/astro-ph')
     json.dump(feedparser.parse(r.text), open("recent.json", "w"))
 
-@workflow
-def basic_meta(entry):  # ->
-
-    return dict(location=entry['id'], title=entry['title'])
 
 
-@workflow
-def mentions_keyword(entry):  # ->
-    d = {}
-
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425":
-        k = keyword.lower()
-
-        for field in 'title', 'summary':
-            n = len(re.findall(keyword, entry[field]))
-            if n>0:
-                d['mentions_'+k] = field
-            if n>1:
-                d['mentions_'+k+'_times'] = n
-        
-
-    return d
-
-
-def workflows(entry, output='n3', boring_limit=2):
-    paper_id = entry['id'].split("/")[-1]
-    paper_ns = 'http://odahub.io/ontology/paper#'
-
-    facts = []
-
-    for w in workflow_context:
-        logger.debug(f"{Fore.BLUE} {w['name']} {Style.RESET_ALL}")
-        logger.debug(f"   has {w['signature']}")
-
-        #if not any((it is GCNText for it in w['signature'].values())):
-        #    continue
-
-        try:
-            o = w['function'](entry)
-
-            logger.debug(f"   {Fore.GREEN} found:  {Style.RESET_ALL} {paper_id} {w['name']} {o}")
-
-            for k, v in o.items():
-                if isinstance(v, list):
-                    vs = v
-                else:
-                    vs = [v]
-
-                for _v in vs:
-                    if isinstance(_v, float):
-                        _v = "%.20lg" % _v
-                    else:
-                        _v = str(_v)
-                        _v = re.sub(r"[\$\\\"\n\r]", "", _v)
-                        _v = "\""+str(_v)+"\""
-
-                    data = f'<{paper_ns}arxiv{paper_id}> <{paper_ns}{k}> {_v}'
-
-                    facts.append(data)
-
-        except (AttributeError, ValueError) as e: 
-            logger.debug(f"  {Fore.YELLOW} problem {Style.RESET_ALL} {repr(e)}")
-
-    if len(list(facts)) <= boring_limit:
-        raise BoringPaper
-
-    logger.info(f"paper {paper_id} facts {len(facts)}")
-
-    if output == 'list':
-        return facts
-
-    if output == 'n3':
-        G = rdflib.Graph()
-
-        for s in facts:
-            G.update(f'INSERT DATA {{ {s} }}')
-
-        return G.serialize(format='n3').decode()
-
-    raise Exception(f"unknown output {output}")
-
-def run_one_paper(entry):
-    try:
-        return entry['id'], workflows(entry, output='list')
-    except BoringPaper:
-        logger.debug(f"boring entry  {entry['id']}")
-
-    return entry['id'], ""
-
-def workflows_by_entry(nthreads=1):
-    logger.info("reading...")
-    t0 = time.time()
-    entries=json.load(open("recent.json"))['entries']
-    logger.info(f"reading done in {time.time()-t0}")
-
-
-    Ex = futures.ThreadPoolExecutor
-    #Ex = futures.ProcessPoolExecutor
-
-    r = []
-
-    with Ex(max_workers=nthreads) as ex:
-        for paper_id, d in ex.map(run_one_paper, entries):
-            logger.debug(f"{paper_id} gives: {len(d)}")
-            r.append(d)
-
-    facts = []
-    for d in r:
-        for s in d:
-            facts.append(s)
-
-    logger.info("updating graph..")
-
-    G = rdflib.Graph()
-    G.bind('paper', rdflib.Namespace('http://odahub.io/ontology/paper#'))
-
-
-    if False:
-        try:
-            G.update('INSERT DATA { '+" .\n".join(facts) + '}')
-        except Exception as e:
-            logger.error(f"problem {e}  adding \"{s}\"")
-            raise Exception()
-    else:
-        for fact in facts:
-            logger.info(f"fact {repr(fact)}")
-            try:
-                G.update(f'INSERT DATA {{ {fact} }}')
-            except Exception as e:
-                logger.error(f'problem {e}  adding "{fact}"')
-                raise 
-
-
-    return G.serialize(format='n3').decode()
 
 
 @cli.command()
 @click.option("--workers", "-w", default=1)
 def learn(workers):
-    t = workflows_by_entry(workers)
+    t = facts.core.workflows_by_input(workers, input_types=[facts.arxiv.PaperEntry])
 
     logger.info(f"read in total {len(t)}")
 
@@ -215,9 +75,8 @@ def publish():
     odakb.sparql.default_prefixes.append("\n".join([d.strip().replace("@prefix","PREFIX").strip(".") for d in D if 'prefix' in d]))
 
     odakb.sparql.insert(
-                "\n".join([d.strip() for d in D if 'prefix' not in d])
-                
-            )
+                    ("\n".join([d.strip() for d in D if 'prefix' not in d])).encode('utf-8').decode('latin-1')
+                )
 
 
 @cli.command()

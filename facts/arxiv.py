@@ -54,16 +54,20 @@ def fetch_recent():
 
 @workflow
 def basic_meta(entry: PaperEntry):  # ->
+    updated_ts = datetime.fromisoformat(entry['updated'].replace('Z',"")).timestamp()
     return dict(
-            location=entry['id'], 
-            title=re.sub(r"[\n\r]", " ", entry['title']))
+                location=entry['id'], 
+                title=re.sub(r"[\n\r]", " ", entry['title']),
+                updated_isot=entry['updated'],
+                updated_ts=updated_ts,
+            )
 
 
 @workflow
 def mentions_keyword(entry: PaperEntry):  # ->
     d = {}
 
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425":
+    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR":
         k = keyword.lower()
 
         for field in 'title', 'summary':
@@ -75,6 +79,14 @@ def mentions_keyword(entry: PaperEntry):  # ->
         
 
     return d
+
+@workflow
+def list_entries() -> typing.List[PaperEntry]:
+    return json.load(open("recent.json"))['entries']
+
+@workflow
+def identity(entry: PaperEntry) -> str:
+    return 'http://odahub.io/ontology/paper#'+entry['id'].split("/")[-1]
 
 if __name__ == "__main__":
     cli()

@@ -100,7 +100,7 @@ def workflows_for_input(entry, output='list'):
 
     logger.info(f"{c_id} facts {len(facts)}")
 
-    if len(facts)<3:
+    if len(facts)<4:
         return c_id, []
 
     print("\n".join(facts))
@@ -172,13 +172,23 @@ def workflows_by_input(nthreads=1, input_types=None):
 
     print()
 
-    D  ='INSERT DATA { '+" .\n".join(facts) + '}'
-    print(D)
-    try:
-        G.update(D)
-    except Exception as e:
-        logger.error(f"problem {e}  adding \"{s}\"")
-        raise Exception()
+    if False:
+        D  ='INSERT DATA { '+" .\n".join(facts) + '}'
+        print(D)
+        try:
+            G.update(D)
+        except Exception as e:
+            logger.error(f"problem {e}  adding \"{s}\"")
+            raise Exception()
+    else:
+        for fact in facts:
+            D  = f'INSERT DATA {{ {fact} }}'
+            print(D)
+            try:
+                G.update(D)
+            except Exception as e:
+                logger.error(f"problem {e}  adding \"{s}\"")
+                raise Exception()
 
     return G.serialize(format='n3').decode()
 
