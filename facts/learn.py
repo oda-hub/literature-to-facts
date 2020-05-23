@@ -15,6 +15,7 @@ import threading
 from facts.core import workflow
 import facts.core
 import facts.arxiv
+import facts.gcn
 from colorama import Fore, Style # type: ignore
 
 logging.basicConfig(level=logging.INFO,
@@ -36,31 +37,22 @@ def cli(debug):
         logger.setLevel(logging.DEBUG)
 
 
-class BoringPaper(Exception):
-    "boring"
-
-
-
-
-@cli.command()
-@click.option("-s", "--search-string")
-def fetch(search_string):
-    r = requests.get('http://export.arxiv.org/api/query?search_query=all:' + search_string)
-    json.dump(feedparser.parse(r.text), open("search.json", "w"))
-
-@cli.command()
-def fetch_recent():
-    r = requests.get('http://arxiv.org/rss/astro-ph')
-    json.dump(feedparser.parse(r.text), open("recent.json", "w"))
-
-
-
 
 
 @cli.command()
 @click.option("--workers", "-w", default=1)
-def learn(workers):
-    t = facts.core.workflows_by_input(workers, input_types=[facts.arxiv.PaperEntry])
+@click.option("-a", "--arxiv", is_flag=True, default=False)
+@click.option("-g", "--gcn", is_flag=True, default=False)
+def learn(workers, arxiv, gcn):
+    it = []
+
+    if arxiv:
+        it.append(facts.arxiv.PaperEntry)
+    
+    if gcn:
+        it.append(facts.gcn.GCNText)
+
+    t = facts.core.workflows_by_input(workers, input_types=it)
 
     logger.info(f"read in total {len(t)}")
 

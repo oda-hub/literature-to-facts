@@ -90,6 +90,7 @@ def basic_time_meta(entry: PaperEntry):  # ->
     return dict(
                 updated_isot=entry['updated'],
                 updated_ts=updated_ts,
+                timestamp=updated_ts,
             )
 
 

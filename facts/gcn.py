@@ -10,7 +10,7 @@ import click
 import rdflib # type: ignore
 from colorama import Fore, Style # type: ignore
 
-from gcnfacts.core import workflow
+from facts.core import workflow
 
 logger = logging.getLogger()
 
@@ -47,10 +47,13 @@ def gcn_source(gcnid: int, allow_net=False) -> GCNText:  # -> gcn
 def get_gcn_tag():
     logger.debug("https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz")
 
-
-@cli.command()
 @workflow
-def _gcn_list_recent():
+def identity(gcntext: GCNText):
+    gcnid = int(re.search(f"NUMBER:(.*)", gcntext).groups()[0])
+    return f"http://odahub.io/ontology/paper#gcn{gcnid:d}"
+
+@workflow
+def gcn_list_recent() -> typing.List[GCNText]:
     gt = requests.get("https://gcn.gsfc.nasa.gov/gcn3_archive.html").text
 
     r = re.findall(r"<A HREF=(gcn3/\d{1,5}.gcn3)>(\d{1,5})</A>", gt)
@@ -59,6 +62,11 @@ def _gcn_list_recent():
 
     for u, i in reversed(r):
         logger.debug(f"{u} {i}")
+
+        try:
+            yield gcn_source(i)
+        except NoSuchGCN:
+            logger.warning(f"no GCN: {i}")
 
 
 @workflow
@@ -78,11 +86,29 @@ def gcn_instrument(gcntext: GCNText):
 
 
 @workflow
+def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {}
+
+    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR":
+        k = keyword.lower()
+
+        n = len(re.findall(keyword, gcntext))
+        if n>0:
+            d['mentions_'+k] = "body"
+        if n>1:
+            d['mentions_'+k+'_times'] = n
+
+    return d
+
+@workflow
 def gcn_meta(gcntext: GCNText):  # ->
     d = {}
 
-    for c in "DATE", "SUBJECT":
+    for c in "DATE", "SUBJECT", "NUMBER":
         d[c] = re.search(c+":(.*)", gcntext).groups()[0].strip()
+
+    d['location'] = f"https://gcn.gsfc.nasa.gov/gcn3/{d['NUMBER']}.gcn3"
+    d['title'] = d['SUBJECT']
 
     return d
 
