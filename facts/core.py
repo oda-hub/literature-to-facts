@@ -99,13 +99,14 @@ def workflows_for_input(entry, output='list'):
 
                     facts.append(data)
 
-        except (AttributeError, ValueError) as e: 
+        except Exception as e: 
             logger.debug(f"  {Fore.YELLOW} problem {Style.RESET_ALL} {repr(e)}")
 
 
     logger.info(f"{c_id} facts {len(facts)}")
 
-    if len(facts)<5:
+    # valuable?
+    if not any(['mentions' in f for f in facts]):
         return c_id, []
 
     print("\n".join(facts))
