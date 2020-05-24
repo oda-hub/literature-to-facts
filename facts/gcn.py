@@ -120,6 +120,14 @@ def gcn_date(gcntext: GCNText) -> dict:  # date
 
     return dict(timestamp=t)
 
+@workflow
+def gcn_named(gcntext: GCNText):  # ->
+    r = re.search("SUBJECT: *(GRB.*?):.*", gcntext, re.I)
+
+    grb_name = r.groups()[0].strip().replace(" ","")
+
+    return dict(mentions_named_grb=grb_name)
+
 
 @workflow
 def gcn_integral_lvc_countepart_search(gcntext: GCNText):  # ->
