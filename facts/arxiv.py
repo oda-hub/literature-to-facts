@@ -1,6 +1,7 @@
 import logging
 import typing
 import re
+import os
 import sys
 import json
 import requests
@@ -29,7 +30,7 @@ class BoringPaper(Exception):
 
 
 @cli.command()
-@click.option("-s", "--search-string")
+@click.option("-s", "--search-string", default="")
 @click.option("-c", "--category", default="astro-ph.*")
 @click.option("-n", "--max-results", default=10)
 def fetch(search_string, max_results, category):
@@ -61,6 +62,8 @@ def fetch(search_string, max_results, category):
                 max_results=max_results
             )
 
+            logger.info(f"params: {params}")
+
             r = requests.get('http://export.arxiv.org/api/query?'+ urllib.parse.urlencode(params, doseq=True))
 
             feed = feedparser.parse(r.text)
@@ -77,11 +80,16 @@ def fetch_recent():
     r = requests.get('http://arxiv.org/rss/astro-ph')
     json.dump(feedparser.parse(r.text), open("papers-recent.json", "w"))
 
+@cli.command()
+def fetch_tar():
+    os.system('curl  https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz | tar xvfz -')
+
 @workflow
 def basic_meta(entry: PaperEntry):  # ->
     return dict(
                 location=entry['id'], 
                 title=re.sub(r"[\n\r]", " ", entry['title']),
+                source="arXiv",
             )
 
 @workflow

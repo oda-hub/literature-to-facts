@@ -2,6 +2,7 @@ import logging
 import typing
 from concurrent import futures
 import re
+import os
 import sys
 import json
 from datetime import datetime
@@ -44,8 +45,10 @@ def gcn_source(gcnid: int, allow_net=False) -> GCNText:  # -> gcn
     raise NoSuchGCN(gcnid)
 
 
-def get_gcn_tag():
+@cli.command("fetch-tar")
+def get_gcn_tar():
     logger.debug("https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz")
+    os.system("curl https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz | tar xvzf -")
 
 @workflow
 def identity(gcntext: GCNText):
@@ -89,7 +92,7 @@ def gcn_instrument(gcntext: GCNText):
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {}
 
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR":
+    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS":
         k = keyword.lower()
 
         n = len(re.findall(keyword, gcntext))
@@ -109,6 +112,7 @@ def gcn_meta(gcntext: GCNText):  # ->
 
     d['location'] = f"https://gcn.gsfc.nasa.gov/gcn3/{d['NUMBER']}.gcn3"
     d['title'] = d['SUBJECT']
+    d['source'] = "GCN"
 
     return d
 
