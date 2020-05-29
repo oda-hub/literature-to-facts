@@ -109,8 +109,6 @@ def workflows_for_input(entry, output='list'):
     if not any(['mentions' in f for f in facts]):
         return c_id, []
 
-    print("\n".join(facts))
-
     if output == 'list':
         return c_id, facts
 
@@ -176,11 +174,10 @@ def workflows_by_input(nthreads=1, input_types=None):
     G = rdflib.Graph()
     G.bind('paper', rdflib.Namespace('http://odahub.io/ontology/paper#'))
 
-    print()
 
     if False:
         D  ='INSERT DATA { '+" .\n".join(facts) + '}'
-        print(D)
+        logger.debug(D)
         try:
             G.update(D)
         except Exception as e:
@@ -189,7 +186,7 @@ def workflows_by_input(nthreads=1, input_types=None):
     else:
         for fact in facts:
             D  = f'INSERT DATA {{ {fact} }}'
-            print(D)
+            logger.debug(D)
             try:
                 G.update(D)
             except Exception as e:
