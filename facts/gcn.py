@@ -46,7 +46,7 @@ def gcn_source(gcnid: int, allow_net=False) -> GCNText:  # -> gcn
 
 
 @cli.command("fetch-tar")
-def get_gcn_tar():
+def fetch_tar():
     logger.debug("https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz")
     os.system("curl https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz | tar xvzf -")
 

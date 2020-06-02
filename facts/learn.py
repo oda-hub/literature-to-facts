@@ -16,6 +16,7 @@ from facts.core import workflow
 import facts.core
 import facts.arxiv
 import facts.gcn
+import facts.atel
 from colorama import Fore, Style # type: ignore
 
 logging.basicConfig(level=logging.INFO,
@@ -43,7 +44,8 @@ def cli(debug):
 @click.option("--workers", "-w", default=1)
 @click.option("-a", "--arxiv", is_flag=True, default=False)
 @click.option("-g", "--gcn", is_flag=True, default=False)
-def learn(workers, arxiv, gcn):
+@click.option("-t", "--atel", is_flag=True, default=False)
+def learn(workers, arxiv, gcn, atel):
     it = []
 
     if arxiv:
@@ -51,6 +53,9 @@ def learn(workers, arxiv, gcn):
     
     if gcn:
         it.append(facts.gcn.GCNText)
+    
+    if atel:
+        it.append(facts.atel.ATelEntry)
 
     t = facts.core.workflows_by_input(workers, input_types=it)
 
