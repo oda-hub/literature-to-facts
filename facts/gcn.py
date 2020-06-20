@@ -33,13 +33,13 @@ class BoringGCN(Exception):
     "boring"
 
 
-def gcn_source(gcnid: int, allow_net=False) -> GCNText:  # -> gcn
+def gcn_source(gcnid: int, allow_net=True) -> GCNText:  # -> gcn
     try:
         t = open(f"gcn3/{gcnid}.gcn3", "rb").read().decode('ascii', 'replace')
         return GCNText(t)
     except FileNotFoundError:
         if allow_net:
-            t = requests.get("https://gcn.gsfc.nasa.gov/gcn3/%i.gcn3" % gcnid).text
+            t = requests.get("https://gcn.gsfc.nasa.gov/gcn3/%i.gcn3" % int(gcnid)).text
             return GCNText(t)
 
     raise NoSuchGCN(gcnid)
@@ -92,7 +92,7 @@ def gcn_instrument(gcntext: GCNText):
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {}
 
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS":
+    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo":
         k = keyword.lower()
 
         n = len(re.findall(keyword, gcntext))
@@ -167,10 +167,13 @@ def gcn_integral_countepart_search(gcntext: GCNText):  # ->
 
 @workflow
 def gcn_icecube_circular(gcntext: GCNText):  # ->
-    r = re.search("SUBJECT:(.*?)- IceCube observation of a high-energy neutrino candidate event",
-                  gcntext, re.I).groups()[0].strip()
+    ev, descr = re.search("SUBJECT:(.*?)- IceCube observation of a(.*)",
+                  gcntext, re.I).groups()
 
-    return dict(reports_icecube_event=r)
+    return dict(
+                reports_icecube_event=ev.strip(),
+                icecube_event_descr=descr.strip(),
+            )
 
 
 @workflow

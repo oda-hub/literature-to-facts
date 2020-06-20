@@ -44,7 +44,7 @@ def fetch():
                         '<TD  class="author" valign=top>(.*?)<BR><EM>(.*?)</EM></TD></TR>',
                         index):
         entry = dict(zip(['atelid', 'url', 'title', 'authors', 'date'], l))
-        print(entry)
+        logging.debug("%s", entry)
         es.append(entry)
 
     json.dump(es, open('atels.json','w'))
