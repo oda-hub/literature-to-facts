@@ -92,7 +92,7 @@ def gcn_instrument(gcntext: GCNText):
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {}
 
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo":
+    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT":
         k = keyword.lower()
 
         n = len(re.findall(keyword, gcntext))
