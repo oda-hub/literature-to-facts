@@ -183,6 +183,14 @@ def gcn_lvc_circular(gcntext: GCNText):  # ->
 
     return dict(lvc_event_report=r)
 
+@workflow
+def integral_ul(gcntext: GCNText):
+    r = re.search("upper limit on the 75-2000 keV fluence of (.*?) erg/cm\^2", 
+                   re.sub(r"[ \n\r]+", " ", gcntext))
+
+    return dict(
+                integral_ul=r.groups()[0].strip(),
+            )
 
 @workflow
 def gcn_grb_integral_circular(gcntext: GCNText):  # ->
