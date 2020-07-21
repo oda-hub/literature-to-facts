@@ -1,5 +1,6 @@
 import logging
 import typing
+import hashlib
 from concurrent import futures
 import re
 import sys
@@ -25,6 +26,7 @@ logger = logging.getLogger()
 
 
 workflow_context = []
+
 
 def workflow(f):
     setattr(sys.modules[f.__module__], f.__name__[1:], f)
@@ -52,7 +54,10 @@ def workflow_id(entry):
 
     for w in workflow_context:
         if input_type in w['signature'].values() and w['name'] == 'identity':
-            return w['function'](input_value)
+            try:
+                return w['function'](input_value)
+            except Exception as e:
+                return "http://odahub.io/ontology/paper#problematic"+input_type.__name__+hashlib.sha224(input_value.encode()).hexdigest()[:8]
 
 
 def workflows_for_input(entry, output='list'):
@@ -60,6 +65,7 @@ def workflows_for_input(entry, output='list'):
     input_value = entry['arg']
 
     c_ns, c_id = workflow_id(entry).split("#")
+
 
     facts = []
 

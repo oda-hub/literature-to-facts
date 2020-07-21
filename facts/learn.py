@@ -4,6 +4,7 @@ from concurrent import futures
 import re
 import sys
 import json
+import importlib
 from datetime import datetime
 import requests
 import feedparser
@@ -33,9 +34,14 @@ PaperEntry = typing.NewType("PaperEntry", dict)
 
 @click.group()
 @click.option("--debug", "-d", default=False, is_flag=True)
-def cli(debug):
+@click.option("-m", "--modules", multiple=True)
+def cli(debug, modules):
     if debug:
         logger.setLevel(logging.DEBUG)
+
+    for module_name in modules:
+        logger.info("loading additional module %s", module_name)
+        mod = importlib.import_module(module_name)
 
 
 
@@ -67,13 +73,24 @@ def learn(workers, arxiv, gcn, atel):
 def publish():
     import odakb.sparql
 
-    D = open("knowledge.n3").readlines()
+    D = open("knowledge.n3").read()
 
-    odakb.sparql.default_prefixes.append("\n".join([d.strip().replace("@prefix","PREFIX").strip(".") for d in D if 'prefix' in d]))
+    odakb.sparql.default_prefixes.append("\n".join([d.strip().replace("@prefix","PREFIX").strip(".") for d in D.splitlines() if 'prefix' in d]))
 
-    odakb.sparql.insert(
-                    ("\n".join([d.strip() for d in D if 'prefix' not in d])).encode('utf-8').decode('latin-1')
-                )
+    D_g = D.split(".\n")
+
+    logger.info("found knowledge, lines: %d fact groups %d", len(D.splitlines()), len(D_g))
+
+    chunk_size = 1000
+    
+    for i in range(0, len(D_g), chunk_size):
+        chunk_D = D_g[i:i + chunk_size]
+        logger.info("chunk of knowledge, lines from %d .. + %d / %d", i, len(chunk_D), len(D_g))
+
+        odakb.sparql.insert(
+                        (".\n".join([d.strip() for d in chunk_D if 'prefix' not in d])).encode('utf-8').decode('latin-1')
+                    )
+
 
 
 @cli.command()

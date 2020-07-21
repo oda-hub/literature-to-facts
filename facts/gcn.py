@@ -39,8 +39,11 @@ def gcn_source(gcnid: int, allow_net=True) -> GCNText:  # -> gcn
         return GCNText(t)
     except FileNotFoundError:
         if allow_net:
-            t = requests.get("https://gcn.gsfc.nasa.gov/gcn3/%i.gcn3" % int(gcnid)).text
-            return GCNText(t)
+            r = requests.get("https://gcn.gsfc.nasa.gov/gcn3/%i.gcn3" % int(gcnid))
+
+            if r.status_code == 200:
+                t = r.text
+                return GCNText(t)
 
     raise NoSuchGCN(gcnid)
 
@@ -52,7 +55,13 @@ def fetch_tar():
 
 @workflow
 def identity(gcntext: GCNText):
-    gcnid = int(re.search(f"NUMBER:(.*)", gcntext).groups()[0])
+    try:
+        gcnid = int(re.search(f"NUMBER:(.*)", gcntext).groups()[0])
+    except Exception as e:
+        logger.error("can not find number in the GCN: {gcnid}: {e}; full text below")
+        print(gcntext)
+
+        raise Exception(f"no identity in GCN: {e}; {gcntext}")
     return f"http://odahub.io/ontology/paper#gcn{gcnid:d}"
 
 @workflow
