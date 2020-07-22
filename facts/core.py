@@ -196,8 +196,8 @@ def workflows_by_input(nthreads=1, input_types=None):
             try:
                 G.update(D)
             except Exception as e:
-                logger.error(f"problem {e}  adding \"{s}\"")
-                raise Exception()
+                logger.error(f"problem {e}  adding \"{D}\"")
+                raise Exception(f"problem {e}  adding \"{D}\"")
 
     return G.serialize(format='n3').decode()
 

@@ -141,6 +141,13 @@ def gcn_named(gcntext: GCNText):  # ->
 
     return dict(mentions_named_grb=grb_name)
 
+@workflow
+def gcn_lvc_event(gcntext: GCNText):  # ->
+    r = re.search("SUBJECT:(LIGO/Virgo.*?):", gcntext, re.I)
+
+    lvc_event = r.groups()[0].strip()
+
+    return dict(lvc_event=lvc_event)
 
 @workflow
 def gcn_integral_lvc_countepart_search(gcntext: GCNText):  # ->
@@ -193,6 +200,16 @@ def gcn_lvc_circular(gcntext: GCNText):  # ->
     return dict(lvc_event_report=r)
 
 @workflow
+def integral_ul_old_variation(gcntext: GCNText):
+    r = re.search("upper limit .*? ([\d\.e\-]*?) erg/cm.*? for a 1 s duration", 
+                   re.sub(r"[ \n\r]+", " ", gcntext))
+
+    return dict(
+                integral_ul_variation=r.groups()[0].strip(),
+            )
+
+
+@workflow
 def integral_ul(gcntext: GCNText):
     r = re.search("upper limit on the 75-2000 keV fluence of (.*?) erg/cm\^2", 
                    re.sub(r"[ \n\r]+", " ", gcntext))
@@ -200,6 +217,10 @@ def integral_ul(gcntext: GCNText):
     return dict(
                 integral_ul=r.groups()[0].strip(),
             )
+
+
+
+
 
 @workflow
 def gcn_grb_integral_circular(gcntext: GCNText):  # ->
@@ -223,6 +244,27 @@ def gcn_lvc_integral_counterpart(gcntext: GCNText):  # ->
               gcntext, re.I).groups()[0].strip()
 
     return dict(lvc_counterpart_by="INTEGRAL")
+
+@workflow
+def submitter(gcntext: GCNText):
+    r = re.search("FROM:(.*?)<(.*?)>\n", gcntext, re.M | re.S)
+
+    return dict(
+                gcn_from_name=r.groups()[0].strip(),
+                gcn_from_email=r.groups()[1].strip(),
+            )
+
+@workflow
+def authors(gcntext: GCNText):
+    gcntext = re.sub("\r", "", gcntext)
+
+    r = re.search("FROM:.*?\n\n(.*?)\n\n", gcntext, re.M | re.S)
+
+    return dict(
+                gcn_authors=r.groups()[0].replace("\n", " ").strip(),
+            )
+
+
 
 if __name__ == "__main__":
     cli()
