@@ -16,25 +16,24 @@ def gcn_ads_data(gcntext: GCNText):
 
     m = gcn_meta(gcntext) 
 
-    adstoken = open(os.path.join(os.environ.get("HOME"), ".adsabs-token")).read().strip()
+    if "INTEGRAL" in m["SUBJECT"]:
+        adstoken = open(os.path.join(os.environ.get("HOME"), ".adsabs-token")).read().strip()
 
-    r = requests.get("https://api.adsabs.harvard.edu/v1/search/query",\
-                            params={'q': f'title:"{m["SUBJECT"]}"', 'fl': 'title, author'},
-                            headers={'Authorization': 'Bearer ' + adstoken})
+        r = requests.get("https://api.adsabs.harvard.edu/v1/search/query",\
+                                params={'q': f'title:"{m["SUBJECT"]}"', 'fl': 'title, author'},
+                                headers={'Authorization': 'Bearer ' + adstoken})
 
-    print("ads returns", r, r.text)
+        print("ads returns", r, r.text)
 
-    docs = r.json()['response']['docs']
+        docs = r.json()['response']['docs']
 
-    assert len(docs) == 1
+        assert len(docs) == 1
 
-    doc = docs[0]
+        doc = docs[0]
 
-    return dict(
-                gcn_authors="; ".join(doc['author'])
-            )
-
-
-
-
+        return dict(
+                    gcn_authors="; ".join(doc['author'])
+                )
+    else:
+        return {}
 

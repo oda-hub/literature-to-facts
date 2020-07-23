@@ -151,14 +151,22 @@ def gcn_named(gcntext: GCNText):  # ->
 
 @workflow
 def gcn_lvc_event(gcntext: GCNText):  # ->
+    D = {}
+
     r = re.search("SUBJECT: *(LIGO/Virgo.*?):", gcntext, re.I)
 
     if r is not None:
-        lvc_event = r.groups()[0].strip()
+        D['lvc_event'] = r.groups()[0].strip()
+    
+        r = re.search(r"at (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d*?) UTC",
+                       re.sub(r"[ \n\r]+", " ", gcntext),
+                       re.I)
 
-        return dict(lvc_event=lvc_event)
+        if r is not None:
+            D['lvc_event_utc'] = r.groups()[0].strip()
 
-    return {}
+
+    return D
 
 @workflow
 def gcn_integral_lvc_countepart_search(gcntext: GCNText):  # ->
@@ -314,6 +322,8 @@ def authors(gcntext: GCNText):
                     gcn_authors=r.groups()[0].replace("\n", " ").strip(),
                 )
     return {}
+
+
 
 
 
