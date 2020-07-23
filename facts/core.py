@@ -60,7 +60,7 @@ def workflow_id(entry):
                 return "http://odahub.io/ontology/paper#problematic"+input_type.__name__+hashlib.sha224(input_value.encode()).hexdigest()[:8]
 
 
-def workflows_for_input(entry, output='list'):
+def workflows_for_input(entry, output: str='list'):
     input_type = entry['arg_type']
     input_value = entry['arg']
 
@@ -101,7 +101,7 @@ def workflows_for_input(entry, output='list'):
                         _v = re.sub(r"[\$\\\"]", "", _v)
                         _v = "\""+str(_v)+"\""
 
-                    data = f'<{c_ns}#{c_id}> <{c_ns}#{k}> {_v}'
+                    data = f'<{c_ns}#{c_id}>', f'<{c_ns}#{k}>', f'{_v}'
 
                     facts.append(data)
 
@@ -112,17 +112,24 @@ def workflows_for_input(entry, output='list'):
     logger.info(f"{c_id} facts {len(facts)}")
 
     # valuable?
-    if not any(['mentions' in f for f in facts]):
+    if not any(['mentions' in (" ".join(f)) for f in facts]):
+        logger.debug("gcn {Fore.RED}not valuable{Style.RESET_ALL}: %s", [" ".join(f) for f in facts])
         return c_id, []
 
     if output == 'list':
-        return c_id, facts
+        return c_id, [" ".join(f) for f in facts]
+    
+    if output == 'dict':
+        return {
+                    p.replace("http://odahub.io/ontology/paper#", "paper:").strip("<>"): o
+                    for s, p, o in facts
+               }
 
     if output == 'n3':
         G = rdflib.Graph()
 
         for s in facts:
-            G.update(f'INSERT DATA {{ {s} }}')
+            G.update(f'INSERT DATA {{ {" ".join(s)} }}')
 
         return G.serialize(format='n3').decode()
 
