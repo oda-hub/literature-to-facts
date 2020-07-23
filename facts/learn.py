@@ -1,13 +1,13 @@
 import logging
 import typing
 from concurrent import futures
+import odakb.sparql # type: ignore
 import re
 import sys
 import json
 import importlib
 from datetime import datetime
 import requests
-import feedparser
 import click
 import rdflib # type: ignore
 import time
@@ -71,7 +71,6 @@ def learn(workers, arxiv, gcn, atel):
 
 @cli.command()
 def publish():
-    import odakb.sparql
 
     D = open("knowledge.n3").read()
 

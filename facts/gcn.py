@@ -56,17 +56,19 @@ def fetch_tar():
 
 @workflow
 def identity(gcntext: GCNText):
-    try:
-        gcnid = int(re.search(f"NUMBER:(.*)", gcntext).groups()[0])
-    except Exception as e:
+    r = re.search(f"NUMBER:(.*)", gcntext)
+
+    if r is None:
         logger.error("can not find number in the GCN: {gcnid}: {e}; full text below")
         print(gcntext)
+        raise Exception(f"no identity in GCN: {gcntext}")
+    else:
+        gcnid = int(r.groups()[0])
 
-        raise Exception(f"no identity in GCN: {e}; {gcntext}")
     return f"http://odahub.io/ontology/paper#gcn{gcnid:d}"
 
 @workflow
-def gcn_list_recent() -> typing.List[GCNText]:
+def gcn_list_recent() -> typing.Generator[GCNText, None, None]:
     gt = requests.get("https://gcn.gsfc.nasa.gov/gcn3_archive.html").text
 
     r = re.findall(r"<A HREF=(gcn3/\d{1,5}.gcn3)>(\d{1,5})</A>", gt)
@@ -100,7 +102,7 @@ def gcn_instrument(gcntext: GCNText):
 
 @workflow
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
-    d = {}
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
 
     for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT":
         k = keyword.lower()
@@ -118,7 +120,9 @@ def gcn_meta(gcntext: GCNText):  # ->
     d = {}
 
     for c in "DATE", "SUBJECT", "NUMBER":
-        d[c] = re.search(c+":(.*)", gcntext).groups()[0].strip()
+        r = re.search(c+":(.*)", gcntext)
+        if r is not None:
+            d[c] = r.groups()[0].strip()
 
     d['location'] = f"https://gcn.gsfc.nasa.gov/gcn3/{d['NUMBER']}.gcn3"
     d['title'] = d['SUBJECT']
@@ -138,67 +142,86 @@ def gcn_date(gcntext: GCNText) -> dict:  # date
 def gcn_named(gcntext: GCNText):  # ->
     r = re.search("SUBJECT: *(GRB.*?):.*", gcntext, re.I)
 
-    grb_name = r.groups()[0].strip().replace(" ","")
+    if r is not None:
+        grb_name = r.groups()[0].strip().replace(" ","")
 
-    return dict(mentions_named_grb=grb_name)
+        return dict(mentions_named_grb=grb_name)
+    else:
+        return {}
 
 @workflow
 def gcn_lvc_event(gcntext: GCNText):  # ->
     r = re.search("SUBJECT: *(LIGO/Virgo.*?):", gcntext, re.I)
 
-    lvc_event = r.groups()[0].strip()
+    if r is not None:
+        lvc_event = r.groups()[0].strip()
 
-    return dict(lvc_event=lvc_event)
+        return dict(lvc_event=lvc_event)
+
+    return {}
 
 @workflow
 def gcn_integral_lvc_countepart_search(gcntext: GCNText):  # ->
     r = re.search("SUBJECT: *(LIGO/Virgo.*?):.*INTEGRAL", gcntext, re.I)
 
-    original_event = r.groups()[0].strip()
+    if r is not None:
+        original_event = r.groups()[0].strip()
 
-    return dict(original_event=original_event)
+        return dict(original_event=original_event)
+
+    return {}
 
 
 @workflow
 def gcn_integral_countepart_search(gcntext: GCNText):  # ->
     r = re.search("SUBJECT:(.*?):.*counterpart.*INTEGRAL", gcntext, re.I)
+    r_u = re.search(
+            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC, hereafter T0", gcntext)
 
-    original_event = r.groups()[0].strip()
+    if r is not None and r_u is not None:
+        original_event = r.groups()[0].strip()
+        original_event_utc = r_u.groups()[0].strip()
 
-    original_event_utc = re.search(
-        r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC, hereafter T0", gcntext).groups()[0]
+        instruments = []
+        if re.search("SUBJECT:(.*?):.*ACS.*", gcntext, re.I):
+            instruments.append("acs")
 
-    instruments = []
-    if re.search("SUBJECT:(.*?):.*ACS.*", gcntext, re.I):
-        instruments.append("acs")
+        if re.search("SUBJECT:(.*?):.*IBIS.*", gcntext, re.I):
+            instruments.append("ibis")
 
-    if re.search("SUBJECT:(.*?):.*IBIS.*", gcntext, re.I):
-        instruments.append("ibis")
+        return dict(
+            original_event=original_event,
+            original_event_utc=original_event_utc,
+            instrument=instruments,
+        )
 
-    return dict(
-        original_event=original_event,
-        original_event_utc=original_event_utc,
-        instrument=instruments,
-    )
+    return {}
 
 
 @workflow
 def gcn_icecube_circular(gcntext: GCNText):  # ->
-    ev, descr = re.search("SUBJECT:(.*?)- IceCube observation of a(.*)",
-                  gcntext, re.I).groups()
+    r = re.search("SUBJECT:(.*?)- IceCube observation of a(.*)",
+                  gcntext, re.I)
 
-    return dict(
-                reports_icecube_event=ev.strip(),
-                icecube_event_descr=descr.strip(),
-            )
+    if r is not None:
+        ev, descr = r.groups()
+
+        return dict(
+                    reports_icecube_event=ev.strip(),
+                    icecube_event_descr=descr.strip(),
+                )
+    return {}
 
 
 @workflow
 def gcn_lvc_circular(gcntext: GCNText):  # ->
     r = re.search("SUBJECT:.*?(LIGO/Virgo .*?): Identification",
-                  gcntext, re.I).groups()[0].strip()
+                  gcntext, re.I)
+    
+    if r is not None:
+        return dict(lvc_event_report=r.groups()[0].strip())
 
-    return dict(lvc_event_report=r)
+    return {}
 
 
 @workflow
@@ -218,10 +241,11 @@ def integral_ul_old_variation(gcntext: GCNText):
         r = re.search("limiting peak flux is ~([\d\.e\-\^x]*?) erg/cm.*? at 1 s time scale",
                    re.sub(r"[ \n\r]+", " ", gcntext))
 
-
-    return dict(
-                integral_ul=float(r.groups()[0].strip().replace("x10^","e")),
-            )
+    if r is not None:
+        return dict(
+                    integral_ul=float(r.groups()[0].strip().replace("x10^","e")),
+                )
+    return {}
 
 
 @workflow
@@ -229,11 +253,11 @@ def integral_ul(gcntext: GCNText):
     r = re.search("upper limit on the 75-2000 keV fluence of ([\d\.e\-\^x]*?) *?erg/cm", 
                    re.sub(r"[ \n\r]+", " ", gcntext))
 
-    print("standard match:", r.groups())
-
-    return dict(
-                integral_ul=float(r.groups()[0].strip().replace("x10^","e")),
-            )
+    if r is not None:
+        return dict(
+                    integral_ul=float(r.groups()[0].strip().replace("x10^","e")),
+                )
+    return {}
 
 
 
@@ -242,44 +266,54 @@ def integral_ul(gcntext: GCNText):
 @workflow
 def gcn_grb_integral_circular(gcntext: GCNText):  # ->
     r = re.search("SUBJECT:.*?(GRB.*?):.*INTEGRAL.*",
-                  gcntext, re.I).groups()[0].strip()
+                  gcntext, re.I)
 
-    grbname = r
+    r_t = re.search(r"(\d\d:\d\d:\d\d) +UT",
+                        gcntext, re.I)
 
-    grbtime = re.search(r"(\d\d:\d\d:\d\d) +UT",
-                        gcntext, re.I).groups()[0].strip()
+    if r is not None and r_t is not None:
+        grbname = r.groups()[0].strip()
+        grbtime = r_t.groups()[0].strip()
 
-    date = grbname.replace("GRB", "").strip()
-    utc = "20" + date[:2] + "-" + date[2:4] + "-" + date[4:6] + " " + grbtime
+        date = grbname.replace("GRB", "").strip()
+        utc = "20" + date[:2] + "-" + date[2:4] + "-" + date[4:6] + " " + grbtime
 
-    return dict(integral_grb_report=grbname, event_t0=utc)
+        return dict(integral_grb_report=grbname, event_t0=utc)
+    return {}
 
 
 @workflow
 def gcn_lvc_integral_counterpart(gcntext: GCNText):  # ->
-    re.search("SUBJECT:.*?(LIGO/Virgo .*?):.*INTEGRAL",
-              gcntext, re.I).groups()[0].strip()
+    r = re.search("SUBJECT:.*?(LIGO/Virgo .*?):.*INTEGRAL",
+              gcntext, re.I)
 
-    return dict(lvc_counterpart_by="INTEGRAL")
+    if r is not None:
+        return dict(lvc_counterpart_by="INTEGRAL")
+
+    return {}
 
 @workflow
 def submitter(gcntext: GCNText):
     r = re.search("FROM:(.*?)<(.*?)>\n", gcntext, re.M | re.S)
 
-    return dict(
-                gcn_from_name=r.groups()[0].strip(),
-                gcn_from_email=r.groups()[1].strip(),
-            )
+    if r is not None:
+        return dict(
+                    gcn_from_name=r.groups()[0].strip(),
+                    gcn_from_email=r.groups()[1].strip(),
+                )
+    return {}
 
 @workflow
 def authors(gcntext: GCNText):
-    gcntext = re.sub("\r", "", gcntext)
+    text = re.sub("\r", "", gcntext)
 
-    r = re.search("FROM:.*?\n\n(.*?)\n\n", gcntext, re.M | re.S)
+    r = re.search("FROM:.*?\n\n(.*?)\n\n", text, re.M | re.S)
 
-    return dict(
-                gcn_authors=r.groups()[0].replace("\n", " ").strip(),
-            )
+    if r is not None:
+        return dict(
+                    gcn_authors=r.groups()[0].replace("\n", " ").strip(),
+                )
+    return {}
 
 
 

@@ -7,7 +7,7 @@ import sys
 import json
 from datetime import datetime
 import requests
-import feedparser
+import feedparser # type: ignore
 import click
 import rdflib # type: ignore
 import time

@@ -5,7 +5,6 @@ import os
 import sys
 import json
 import requests
-import feedparser
 import click
 import time
 import urllib.parse
@@ -51,7 +50,7 @@ def fetch():
 
 @workflow
 def mentions_keyword(entry: ATelEntry):  # ->
-    d = {}
+    d = {} # type: typing.Dict[str, typing.Any]
 
     for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR":
         k = keyword.lower()

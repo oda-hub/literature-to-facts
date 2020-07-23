@@ -5,7 +5,7 @@ import os
 import sys
 import json
 import requests
-import feedparser
+import feedparser # type: ignore
 import click
 import time
 import urllib.parse
@@ -94,7 +94,7 @@ def basic_meta(entry: PaperEntry):  # ->
 
 @workflow
 def basic_time_meta(entry: PaperEntry):  # ->
-    updated_ts = datetime.fromisoformat(entry['updated'].replace('Z',"")).timestamp()
+    updated_ts = datetime.fromisoformat(entry['updated'].replace('Z',"")).timestamp() # type: ignore:w
     return dict(
                 updated_isot=entry['updated'],
                 updated_ts=updated_ts,
@@ -104,7 +104,7 @@ def basic_time_meta(entry: PaperEntry):  # ->
 
 @workflow
 def mentions_keyword(entry: PaperEntry):  # ->
-    d = {}
+    d = {} # type: typing.Dict[str, typing.Any]
 
     for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR":
         k = keyword.lower()
@@ -121,7 +121,7 @@ def mentions_keyword(entry: PaperEntry):  # ->
 
 @workflow
 def list_entries() -> typing.List[PaperEntry]:
-    es = []
+    es = [] # type: typing.List[PaperEntry]
     for fn in glob.glob("papers-*json"):
         es += json.load(open(fn))['entries']
 
