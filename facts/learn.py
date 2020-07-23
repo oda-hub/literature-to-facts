@@ -35,7 +35,7 @@ PaperEntry = typing.NewType("PaperEntry", dict)
 @click.group()
 @click.option("--debug", "-d", default=False, is_flag=True)
 @click.option("-m", "--modules", multiple=True)
-def cli(debug, modules):
+def cli(debug=False, modules=[]):
     if debug:
         logger.setLevel(logging.DEBUG)
 
@@ -75,7 +75,7 @@ def publish():
 
     D = open("knowledge.n3").read()
 
-    odakb.sparql.default_prefixes.append("\n".join([d.strip().replace("@prefix","PREFIX").strip(".") for d in D.splitlines() if 'prefix' in d]))
+    odakb.sparql.LocalGraph.default_prefixes.append("\n".join([d.strip().replace("@prefix","PREFIX").strip(".") for d in D.splitlines() if 'prefix' in d]))
 
     D_g = D.split(".\n")
 

@@ -40,7 +40,7 @@ def workflow(f):
 
 @click.group()
 @click.option("--debug", "-d", default=False, is_flag=True)
-def cli(debug):
+def cli(debug=False):
     if debug:
         logger.setLevel(logging.DEBUG)
 
