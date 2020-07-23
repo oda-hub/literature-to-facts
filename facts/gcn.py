@@ -33,7 +33,8 @@ class BoringGCN(Exception):
     "boring"
 
 
-def gcn_source(gcnid: int, allow_net=True) -> GCNText:  # -> gcn
+@workflow
+def gcn_source(gcnid: int, allow_net=True) -> GCNText:
     try:
         t = open(f"gcn3/{gcnid}.gcn3", "rb").read().decode('ascii', 'replace')
         return GCNText(t)
@@ -143,7 +144,7 @@ def gcn_named(gcntext: GCNText):  # ->
 
 @workflow
 def gcn_lvc_event(gcntext: GCNText):  # ->
-    r = re.search("SUBJECT:(LIGO/Virgo.*?):", gcntext, re.I)
+    r = re.search("SUBJECT: *(LIGO/Virgo.*?):", gcntext, re.I)
 
     lvc_event = r.groups()[0].strip()
 
@@ -151,7 +152,7 @@ def gcn_lvc_event(gcntext: GCNText):  # ->
 
 @workflow
 def gcn_integral_lvc_countepart_search(gcntext: GCNText):  # ->
-    r = re.search("SUBJECT:(LIGO/Virgo.*?):.*INTEGRAL", gcntext, re.I)
+    r = re.search("SUBJECT: *(LIGO/Virgo.*?):.*INTEGRAL", gcntext, re.I)
 
     original_event = r.groups()[0].strip()
 
@@ -199,23 +200,39 @@ def gcn_lvc_circular(gcntext: GCNText):  # ->
 
     return dict(lvc_event_report=r)
 
+
 @workflow
 def integral_ul_old_variation(gcntext: GCNText):
     r = re.search("upper limit .*? ([\d\.e\-]*?) erg/cm.*? for a 1 s duration", 
                    re.sub(r"[ \n\r]+", " ", gcntext))
+    
+    if r is None:
+        r = re.search("We find a limiting fluence of ([\d\.e\-]*?) erg/cm", 
+                   re.sub(r"[ \n\r]+", " ", gcntext), re.I)
+    
+    if r is None:
+        r = re.search("([\d\.e\-]*?) erg/cm2 for 1 s", 
+                   re.sub(r"[ \n\r]+", " ", gcntext))
+    
+    if r is None:
+        r = re.search("limiting peak flux is ~([\d\.e\-\^x]*?) erg/cm.*? at 1 s time scale",
+                   re.sub(r"[ \n\r]+", " ", gcntext))
+
 
     return dict(
-                integral_ul_variation=r.groups()[0].strip(),
+                integral_ul=float(r.groups()[0].strip().replace("x10^","e")),
             )
 
 
 @workflow
 def integral_ul(gcntext: GCNText):
-    r = re.search("upper limit on the 75-2000 keV fluence of (.*?) erg/cm\^2", 
+    r = re.search("upper limit on the 75-2000 keV fluence of ([\d\.e\-\^x]*?) *?erg/cm", 
                    re.sub(r"[ \n\r]+", " ", gcntext))
 
+    print("standard match:", r.groups())
+
     return dict(
-                integral_ul=r.groups()[0].strip(),
+                integral_ul=float(r.groups()[0].strip().replace("x10^","e")),
             )
 
 
