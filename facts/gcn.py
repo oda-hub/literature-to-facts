@@ -116,21 +116,39 @@ def mentions_keyword(gcntext: GCNText):  # ->$
     return d
 
 @workflow
-def fermi_realtime_gcn(gcntext: GCNText):  # ->$                                                                                                                                                                
+def fermi_realtime(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {} # type: typing.Dict[str, typing.Union[str, int]]
 
     r = re.search(r"At (.*?), the Fermi Gamma-ray Burst Monitor \(GBM\) triggered", gcntext)
     #r = re.search(r"At (\d{2}:\d{2}:\d{2} UT on .*?), the Fermi Gamma-ray Burst Monitor (GBM) triggered", gcntext)
     
-    if r is None:
-        print("failed to find fermi realtime gcn in", gcntext)
-    else:
+    if r is not None:
         d['grb_isot'] = datetime.strptime(
                 r.groups()[0].strip(), 
                 "%H:%M:%S UT on %d %b %Y"
             ).strftime("%Y-%m-%dT%H:%M:%S")
 
     return d
+
+@workflow
+def swift_detected(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+
+    T = re.sub("\n", " ", gcntext, re.M | re.S)
+    r = re.search(r"At (.*?) UT, the Swift Burst Alert Telescope \(BAT\) triggered and located (GRB ?.*?) ", 
+                  T)
+    
+    if r is not None:
+        print(r.groups())
+        d['grb_isot'] = datetime.strptime(
+                r.groups()[0].strip() + " " + r.groups()[1].strip()[:-1].replace(" ", ""),
+                "%H:%M:%S GRB%y%m%d",
+            ).strftime("%Y-%m-%dT%H:%M:%S")
+    else:
+        print(T)
+
+    return d
+
 
 @workflow
 def gcn_meta(gcntext: GCNText):  # ->

@@ -18,13 +18,18 @@ def parse_gcn(i):
     return F
 
 
-def test_gcns():
+def test_iul():
     G = parse_gcn(20249)
 
     assert float(G['paper:integral_ul'])  == 4.6e-7
 
 
-def test_gcns():
+def test_fermirt():
     G = parse_gcn(28702)
 
     assert G['paper:grb_isot'].strip("\"") == "2020-10-20T17:33:54"
+
+def test_swift():
+    G = parse_gcn(28666)
+
+    assert G['paper:grb_isot'].strip("\"") == "2020-10-17T09:46:31"
