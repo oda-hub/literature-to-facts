@@ -23,3 +23,8 @@ def test_gcns():
 
     assert float(G['paper:integral_ul'])  == 4.6e-7
 
+
+def test_gcns():
+    G = parse_gcn(28702)
+
+    assert G['paper:grb_isot'].strip("\"") == "2020-10-20T17:33:54"

@@ -104,7 +104,7 @@ def gcn_instrument(gcntext: GCNText):
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {} # type: typing.Dict[str, typing.Union[str, int]]
 
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT":
+    for keyword in "HAWC", "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT":
         k = keyword.lower()
 
         n = len(re.findall(keyword, gcntext))
@@ -112,6 +112,23 @@ def mentions_keyword(gcntext: GCNText):  # ->$
             d['mentions_'+k] = "body"
         if n>1:
             d['mentions_'+k+'_times'] = n
+
+    return d
+
+@workflow
+def fermi_realtime_gcn(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+
+    r = re.search(r"At (.*?), the Fermi Gamma-ray Burst Monitor \(GBM\) triggered", gcntext)
+    #r = re.search(r"At (\d{2}:\d{2}:\d{2} UT on .*?), the Fermi Gamma-ray Burst Monitor (GBM) triggered", gcntext)
+    
+    if r is None:
+        print("failed to find fermi realtime gcn in", gcntext)
+    else:
+        d['grb_isot'] = datetime.strptime(
+                r.groups()[0].strip(), 
+                "%H:%M:%S UT on %d %b %Y"
+            ).strftime("%Y-%m-%dT%H:%M:%S")
 
     return d
 
@@ -172,19 +189,35 @@ def gcn_lvc_event(gcntext: GCNText):  # ->
 def gcn_integral_lvc_countepart_search(gcntext: GCNText):  # ->
     r = re.search("SUBJECT: *(LIGO/Virgo.*?):.*INTEGRAL", gcntext, re.I)
 
+    D = {}
+
     if r is not None:
         original_event = r.groups()[0].strip()
 
-        return dict(original_event=original_event)
+        D['original_event']=original_event
+    
+    r_u = re.search(
+            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:[\d\.]+?) UTC, hereafter T0", gcntext)
 
-    return {}
+    if r_u is not None:
+        D['original_event_utc'] = r_u.groups()[0].strip()
+
+    return D
 
 
 @workflow
 def gcn_integral_countepart_search(gcntext: GCNText):  # ->
+
     r = re.search("SUBJECT:(.*?):.*counterpart.*INTEGRAL", gcntext, re.I)
+
+    if r is None:
+        r = re.search("SUBJECT:(.*?):.*INTEGRAL.*counterpart.*", gcntext, re.I)
+
+    if r is None:
+        r = re.search("SUBJECT:(.*?):.*associated.*INTEGRAL.*", gcntext, re.I)
+
     r_u = re.search(
-            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC, hereafter T0", gcntext)
+            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:[\d\.]+?) UTC, hereafter T0", gcntext)
 
     if r is not None and r_u is not None:
         original_event = r.groups()[0].strip()

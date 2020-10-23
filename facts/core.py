@@ -79,8 +79,12 @@ def workflows_for_input(entry, output: str='list'):
 
         try:
             o = w['function'](input_value)
-                
-            logger.debug(f"   {Fore.GREEN} found:  {Style.RESET_ALL} {c_id} {w['name']} {o}")
+
+            if len(o) == 0:
+                logger.debug(f"   {Fore.YELLOW} empty:  {Style.RESET_ALL} {c_id} {w['name']} {o}")
+                continue
+            else:
+                logger.debug(f"   {Fore.GREEN} found:  {Style.RESET_ALL} {c_id} {w['name']} {o}")
 
             for k, v in o.items():
                 if isinstance(v, list):
