@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}-worker
+  labels:
+{{ include "chart.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCountWorker }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "chart.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "chart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          #  command: ["python"]
+          #args: ["-m", "facts.tools", "daily"]
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+              - ls
+              - /
+            failureThreshold: 5
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+              - ls
+              - /
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+          - name: ODA_SPARQL_ROOT
+            value: "http://fuseki.internal.odahub.io/dataanalysis"
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+                secretKeyRef:
+                  name: db-user-pass
+                  key: password.txt
+          - name: MINIO_KEY
+            valueFrom:
+                secretKeyRef:
+                  name: minio-key
+                  key: minio-key.txt
+          - name: JENA_PASSWORD
+            valueFrom:
+                secretKeyRef:
+                  name: jena-password
+                  key: jena-password.txt
+          - name: LOGSTASH_ENTRYPOINT
+            valueFrom:
+                secretKeyRef:
+                  name: logstash-entrypoint
+                  key: logstash-entrypoint.txt
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

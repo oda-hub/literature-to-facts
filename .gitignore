@@ -6,3 +6,6 @@ build
 .eggs
 gcn3
 data
+dist
+*.egg-info
+.snakemake

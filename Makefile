@@ -1,0 +1,18 @@
+tag=$(shell git describe --always --tags)
+repo=admin.reproducible.online/odahub-facts
+
+dist:
+	rm -fv dist/*
+	python setup.py sdist
+
+build: Dockerfile dist
+	docker build . -t $(repo):$(tag)
+
+push: build
+	docker push $(repo):$(tag)
+
+install: push
+	helm upgrade --install facts chart --set image.tag=$(tag)
+
+run: build
+	docker run $(repo):$(tag) python -m facts.tools daily
