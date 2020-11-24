@@ -7,4 +7,6 @@ RUN pip install -r /requirements.txt
 ADD dist /dist
 RUN pip install /dist/*
 
-WORKDIR /tmp
+ADD entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT [ "bash", "/entrypoint.sh" ]
