@@ -1,9 +1,8 @@
-FROM python:3.6
+FROM python:3.8
 
 ADD requirements.txt /requirements.txt
 RUN pip install --upgrade pip
 RUN pip install -r /requirements.txt
 
-ADD facts /facts
-RUN pip install facts
+RUN pip install facts --upgrade
 

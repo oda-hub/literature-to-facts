@@ -1,2 +1,8 @@
 feedparser
 click
+requests
+oda-knowledge-base
+rdflib
+colorama
+cwltool
+typing
