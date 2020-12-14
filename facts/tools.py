@@ -23,6 +23,8 @@ def daily(ctx, one_shot):
         ]
 
     while True:
+        sleep_seconds = 301
+
         now = time.time()
         for t in tasks:
             age = now - t['last']
@@ -36,7 +38,8 @@ def daily(ctx, one_shot):
         if one_shot:
             break
 
-        time.sleep(301)
+        print(f"sleeping.... {sleep_seconds} from {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        time.sleep(sleep_seconds)
 
 if __name__ == "__main__":
     cli()
