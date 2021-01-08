@@ -98,14 +98,13 @@ def basic_meta(entry: ATelEntry):  # ->$
             location=entry['url'],
             title=re.sub(r"[\n\r]", " ", entry['title']),
             source="ATel",
+            atelid=entry['atelid'],
         )
 
 
 @workflow
 def list_entries() -> typing.List[ATelEntry]:
     es = json.load(open('atels.json'))
-
- #   index = requests.get('http://www.astronomerstelegram.org/').text
 
     return es
 
