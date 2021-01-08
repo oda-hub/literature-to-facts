@@ -20,4 +20,43 @@ It can also extract keywords, but unlike google, it, for the moment, uses fixed 
 
 see linked-data concept for mode ideas.
 
+## Try it locally
+
+for *ATels*:
+
+Not all atels are ingested, only "interesting" ones (with some useful attributes).
+
+Currently, there are 836 interesting ATels.
+
+to parse atels from html:
+
+```python
+python -m  facts.atel -d parse-html ~/ATels.html
+```
+
+or fetch last ones:
+
+```python
+python -m  facts.atel -d fetch
+```
+
+to extract from atels
+```python
+python -m facts.learn learn -t
+```
+
+
+to extract from atels
+```python
+python -m facts.learn learn -t
+```
+
+it will store knowledge.n3
+
+which is then published to the kb (given the permissions)
+
+```python
+python -m facts.learn publish
+```
+
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
