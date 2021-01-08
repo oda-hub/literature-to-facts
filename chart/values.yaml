@@ -5,9 +5,9 @@
 replicaCountWorker: 1
 
 image:
-  #repository: odahub/facts
+  repository: odahub/facts
   #repository: admin.reproducible.online/oda-tests
-  repository: admin.reproducible.online/odahub-facts
+  # repository: admin.reproducible.online/odahub-facts
   tag: latest
   pullPolicy: IfNotPresent
 

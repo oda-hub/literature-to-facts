@@ -33,6 +33,28 @@ def atel_date(entry: ATelEntry) -> dict:  # date
 
     return dict(timestamp=t)
 
+@cli.command('parse-html')
+@click.argument("html")
+def parse_html(html):
+    index = open(html).read()
+    logger.debug("got file of %s bytes", len(index))
+
+    es=[]
+    for l in re.findall('<tr valign="top"><td class="num">(\d+)</td>'+
+                        '<td class="title"><a href="(http.*?)">(.*?)</a></td>'+
+                        '<td class="author" valign="top">(.*?)<BR><EM>(.*?)</EM></TD></TR>',
+                        index,
+                        re.I
+                        ):
+        entry = dict(zip(['atelid', 'url', 'title', 'authors', 'date'], l))
+        logging.debug("%s", entry)
+        es.append(entry)
+
+    logger.debug("found in total %s entries", len(es))
+
+    json.dump(es, open('atels.json','w'))
+
+
 @cli.command('fetch')
 def fetch():
     index = requests.get('http://www.astronomerstelegram.org/').text

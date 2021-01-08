@@ -1,5 +1,6 @@
 tag=$(shell git describe --always --tags)
-repo=admin.reproducible.online/odahub-facts
+repo=odahub/facts
+#repo=admin.reproducible.online/odahub-facts
 
 dist:
 	rm -fv dist/*
