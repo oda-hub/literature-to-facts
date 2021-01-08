@@ -37,6 +37,11 @@ def atel_date(entry: ATelEntry) -> dict:  # date
 @click.argument("html")
 def parse_html(html):
     index = open(html).read()
+
+    index = re.sub('<tr', r'\n<tr', index)
+    open("degoogled.html", "w").write(index)
+
+
     logger.debug("got file of %s bytes", len(index))
 
     es=[]
@@ -44,13 +49,14 @@ def parse_html(html):
                         '<td class="title"><a href="(http.*?)">(.*?)</a></td>'+
                         '<td class="author" valign="top">(.*?)<BR><EM>(.*?)</EM></TD></TR>',
                         index,
-                        re.I
+                        re.I | re.M | re.S 
                         ):
-        entry = dict(zip(['atelid', 'url', 'title', 'authors', 'date'], l))
+        entry = dict(zip(['atelid', 'url', 'title', 'authors', 'date'], 
+                [ i.replace("\n", " ") for i in l ]))
         logging.debug("%s", entry)
         es.append(entry)
 
-    logger.debug("found in total %s entries", len(es))
+    logger.info("found in total %s entries", len(es))
 
     json.dump(es, open('atels.json','w'))
 
