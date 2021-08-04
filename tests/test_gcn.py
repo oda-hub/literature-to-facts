@@ -33,3 +33,9 @@ def test_swift():
     G = parse_gcn(28666)
 
     assert G['paper:grb_isot'].strip("\"") == "2020-10-17T09:46:31"
+
+def test_gbm_v2():
+    G = parse_gcn(30585)
+
+    assert G['paper:grb_isot'].strip("\"") == "2021-08-01T13:57:18.60"
+    

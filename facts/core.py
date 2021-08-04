@@ -203,7 +203,7 @@ def workflows_by_input(nthreads=1, input_types=None):
     else:
         for fact in facts:
             D  = f'INSERT DATA {{ {fact} }}'
-            logger.debug(D)
+            logger.info(D)
             try:
                 G.update(D)
             except Exception as e:

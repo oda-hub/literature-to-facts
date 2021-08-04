@@ -131,6 +131,23 @@ def fermi_realtime(gcntext: GCNText):  # ->$
     return d
 
 @workflow
+def fermi_v2(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+
+    r = re.search(r"At (?P<grb_date>[0-9:\.]*? UT on [0-9]{1,2} [a-zA-Z]*? [0-9]{4}?).*?, the Fermi Gamma-Ray Burst Monitor \(GBM\) triggered and located (?P<name>GRB [0-9]{6}[A-G])", 
+                   re.sub("[ \n]+", " ", gcntext))
+        
+    if r is not None:
+        d['grb_isot'] = datetime.strptime(
+                r.group('grb_date').strip(), 
+                "%H:%M:%S.%f UT on %d %B %Y"
+            ).strftime("%Y-%m-%dT%H:%M:%S")
+
+    return d
+
+
+
+@workflow
 def swift_detected(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {} # type: typing.Dict[str, typing.Union[str, int]]
 
