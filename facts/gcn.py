@@ -141,7 +141,7 @@ def fermi_v2(gcntext: GCNText):  # ->$
         d['grb_isot'] = datetime.strptime(
                 r.group('grb_date').strip(), 
                 "%H:%M:%S.%f UT on %d %B %Y"
-            ).strftime("%Y-%m-%dT%H:%M:%S")
+            ).strftime("%Y-%m-%dT%H:%M:%S.%f")
 
     return d
 

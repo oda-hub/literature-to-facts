@@ -37,5 +37,5 @@ def test_swift():
 def test_gbm_v2():
     G = parse_gcn(30585)
 
-    assert G['paper:grb_isot'].strip("\"") == "2021-08-01T13:57:18.60"
+    assert G['paper:grb_isot'].strip("\"") == "2021-08-01T13:57:18.600000"
     
