@@ -93,19 +93,14 @@ def workflows_for_input(entry, output: str='list'):
                     vs = [v]
 
                 for _v in vs:
-                    try:
-                        _v = float(_v)
-                    except:
-                        pass
+                    # try:
+                    #     _v = float(_v)
+                    # except:
+                    #     pass
 
-                    if isinstance(_v, float):
-                        _v = "%.20lg" % _v
-                    else:
-                        _v = str(_v)
-                        _v = re.sub(r"[\$\\\"]", "", _v)
-                        _v = "\""+str(_v)+"\""
+                    _v = rdflib.Literal(_v).n3()
 
-                    data = f'<{c_ns}#{c_id}>', f'<{c_ns}#{k}>', f'{_v}'
+                    data = rdflib.URIRef(f'<{c_ns}#{c_id}>'), f'<{c_ns}#{k}>', f'{_v}'
 
                     facts.append(data)
 
@@ -125,7 +120,7 @@ def workflows_for_input(entry, output: str='list'):
     
     if output == 'dict':
         return {
-                    p.replace("http://odahub.io/ontology/paper#", "paper:").strip("<>"): o
+                    p.replace("http://odahub.io/ontology/paper#", "paper:").strip("<>"): rdflib.util.from_n3(o).value
                     for s, p, o in facts
                }
 
@@ -211,7 +206,7 @@ def workflows_by_input(nthreads=1, input_types=None):
                 raise Exception(f"problem {e}  adding \"{D}\"")
 
     r = G.serialize(format='n3')
-    
+
     if isinstance(r, bytes):
         return r.decode()
     else:

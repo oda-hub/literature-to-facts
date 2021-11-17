@@ -44,16 +44,16 @@ def test_gbm_coord():
     G = parse_gcn(31077)
 
     assert G['paper:grb_isot'].strip("\"") == "2021-11-12T14:34:22"
-    assert "%.5lg" % float(G['paper:gbm_ra'].strip("\"")) == "138.4"
-    assert "%.5lg" % float(G['paper:gbm_dec'].strip("\"")) == "-2.5"
-    assert "%.5lg" % float(G['paper:gbm_rad'].strip("\"")) == "3"
+    assert "%.5lg" % float(G['paper:gbm_ra']) == "138.4"
+    assert "%.5lg" % float(G['paper:gbm_dec']) == "-2.5"
+    assert "%.5lg" % float(G['paper:gbm_rad']) == "3"
 
 
 def test_gbm_balrog():
     G = parse_gcn(30634)
 
     assert G['paper:grb_isot'].strip("\"") == "2021-08-12T16:47:01.010000"
-    assert G['paper:gbm_trigger_id'] == "650479626"
+    assert G['paper:gbm_trigger_id'] == 650479626
     assert G['paper:url'].strip("\"") == "https://grb.mpe.mpg.de/grb/GRB210812699/"
     
 
@@ -61,6 +61,13 @@ def test_icecube():
     G = parse_gcn(31085)
 
     assert G['paper:event_isot'].strip("\"") == "2021-11-16T10:33:16.050000"
-    assert "%.6lg" % float(G['paper:ra']) == "42.45"
-    assert "%.6lg" % float(G['paper:dec']) == "0.15"
+    assert "%.6lg" % float(G['paper:icecube_ra']) == "42.45"
+    assert "%.6lg" % float(G['paper:icecube_dec']) == "0.15"
+    
+
+def test_learn_gcns():
+    import facts.core
+    import facts.gcn
+
+    t = facts.core.workflows_by_input(1, input_types=[facts.gcn.GCNText])
     

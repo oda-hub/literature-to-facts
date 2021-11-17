@@ -109,7 +109,7 @@ def relevant_keywords():
                 "FRB", "GRB", "magnetar", "SGR", 
                 "GW170817", "GW190425", 
         ]
-        
+
 
 @workflow
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
@@ -146,9 +146,9 @@ def fermi_realtime(gcntext: GCNText):  # ->$
                   )
 
     if r is not None:
-        d['gbm_ra'] = float(r.group('ra'))
-        d['gbm_dec'] = float(r.group('dec'))
-        d['gbm_rad'] = float(r.group('rad'))
+        d['gbm_ra'] = r.group('ra')
+        d['gbm_dec'] = r.group('dec')
+        d['gbm_rad'] = r.group('rad')
 
     return d
 
@@ -180,7 +180,7 @@ def gbm_balrog(gcntext: GCNText):  # ->$
         j_data = requests.get(d['url_json']).json()
 
         d['grb_isot'] = j_data[0]['grb_params'][0]['trigger_timestamp'].replace("Z", "")
-        d['gbm_trigger_id'] = j_data[0]['grb_params'][0]['trigger_number']
+        d['gbm_trigger_id'] = int(j_data[0]['grb_params'][0]['trigger_number'])
         d['balrog_ra'] = j_data[0]['grb_params'][0]['balrog_ra']
         d['balrog_ra_err'] = j_data[0]['grb_params'][0]['balrog_ra_err']
         d['balrog_dec'] = j_data[0]['grb_params'][0]['balrog_dec']
@@ -347,7 +347,7 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
                 )
 
         try:
-            d['ra'] = float(r_ra.group('ra'))
+            d['icecube_ra'] = r_ra.group('ra')
         except (ValueError, IndexError):
             pass
 
@@ -356,7 +356,7 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
                 )
 
         try:
-            d['dec'] = float(r_dec.group('dec'))
+            d['icecube_dec'] = r_dec.group('dec')
         except (ValueError, IndexError):
             pass
 
