@@ -120,13 +120,24 @@ def fermi_realtime(gcntext: GCNText):  # ->$
     d = {} # type: typing.Dict[str, typing.Union[str, int]]
 
     r = re.search(r"At (.*?), the Fermi Gamma-ray Burst Monitor \(GBM\) triggered", gcntext)
-    #r = re.search(r"At (\d{2}:\d{2}:\d{2} UT on .*?), the Fermi Gamma-ray Burst Monitor (GBM) triggered", gcntext)
     
     if r is not None:
         d['grb_isot'] = datetime.strptime(
                 r.groups()[0].strip(), 
                 "%H:%M:%S UT on %d %b %Y"
             ).strftime("%Y-%m-%dT%H:%M:%S")
+
+
+    r = re.search(r"The on-ground calculated location, using the Fermi GBM trigger data.*?"
+                  r"RA = (?P<ra>[\d\.\-\+]*?), Dec = (?P<dec>[\d\.\-\+]*?) .*?"
+                  r"with a statistical uncertainty of (?P<rad>[\d\.\-\+]*?) degrees.",
+                  gcntext
+                  )
+
+    if r is not None:
+        d['gbm_ra'] = float(r.group('ra'))
+        d['gbm_dec'] = float(r.group('dec'))
+        d['gbm_rad'] = float(r.group('rad'))
 
     return d
 

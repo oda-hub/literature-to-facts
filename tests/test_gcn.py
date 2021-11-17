@@ -39,6 +39,16 @@ def test_gbm_v2():
 
     assert G['paper:grb_isot'].strip("\"") == "2021-08-01T13:57:18.600000"
 
+
+def test_gbm_coord():
+    G = parse_gcn(31077)
+
+    assert G['paper:grb_isot'].strip("\"") == "2021-11-12T14:34:22"
+    assert "%.5lg" % float(G['paper:gbm_ra'].strip("\"")) == "138.4"
+    assert "%.5lg" % float(G['paper:gbm_dec'].strip("\"")) == "-2.5"
+    assert "%.5lg" % float(G['paper:gbm_rad'].strip("\"")) == "3"
+
+
 def test_gbm_balrog():
     G = parse_gcn(30634)
 
