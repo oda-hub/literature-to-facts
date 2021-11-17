@@ -210,7 +210,11 @@ def workflows_by_input(nthreads=1, input_types=None):
                 logger.error(f"problem {e}  adding \"{D}\"")
                 raise Exception(f"problem {e}  adding \"{D}\"")
 
-    return G.serialize(format='n3').decode()
+    r = G.serialize(format='n3')
+    if isinstance(r, bytes):
+        return r.decode()
+    else:
+        return r
 
 if __name__ == "__main__":
     cli()
