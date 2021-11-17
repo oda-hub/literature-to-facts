@@ -100,11 +100,22 @@ def gcn_instrument(gcntext: GCNText):
     return dict(instrument=instruments)
 
 
+def relevant_keywords():
+    # TODO: fetch from KG, cache with expiration
+    return [ 
+                "HAWC", "INTEGRAL", "CTA", "HESS", "MAGIC", "LST", "SKA",
+                "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT",
+                "SPI-ACS", "ISGRI",
+                "FRB", "GRB", "magnetar", "SGR", 
+                "GW170817", "GW190425", 
+        ]
+        
+
 @workflow
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {} # type: typing.Dict[str, typing.Union[str, int]]
 
-    for keyword in "HAWC", "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT":
+    for keyword in relevant_keywords():
         k = keyword.lower()
 
         n = len(re.findall(keyword, gcntext))

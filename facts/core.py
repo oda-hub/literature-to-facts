@@ -211,6 +211,7 @@ def workflows_by_input(nthreads=1, input_types=None):
                 raise Exception(f"problem {e}  adding \"{D}\"")
 
     r = G.serialize(format='n3')
+    
     if isinstance(r, bytes):
         return r.decode()
     else:
