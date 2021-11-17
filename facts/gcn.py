@@ -145,6 +145,26 @@ def fermi_v2(gcntext: GCNText):  # ->$
 
     return d
 
+@workflow
+def gbm_balrog(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+
+    r = re.search(r"(?P<url_json>https://.*?json)", gcntext)
+
+    if r:
+        d['url_json'] = r.group('url_json')
+        d['url'] = d['url_json'].replace('/json', '/')
+
+        j_data = requests.get(d['url_json']).json()
+
+        d['grb_isot'] = j_data[0]['grb_params'][0]['trigger_timestamp'].replace("Z", "")
+        d['gbm_trigger_id'] = j_data[0]['grb_params'][0]['trigger_number']
+        d['balrog_ra'] = j_data[0]['grb_params'][0]['balrog_ra']
+        d['balrog_ra_err'] = j_data[0]['grb_params'][0]['balrog_ra_err']
+        d['balrog_dec'] = j_data[0]['grb_params'][0]['balrog_dec']
+        d['balrog_dec_err'] = j_data[0]['grb_params'][0]['balrog_dec_err']
+    
+    return d
 
 
 @workflow
@@ -276,17 +296,50 @@ def gcn_integral_countepart_search(gcntext: GCNText):  # ->
 
 @workflow
 def gcn_icecube_circular(gcntext: GCNText):  # ->
-    r = re.search("SUBJECT:(.*?)- IceCube observation of a(.*)",
+    r = re.search("SUBJECT:(.*?)IceCube observation of a(.*)",
                   gcntext, re.I)
+
+    d = {}
 
     if r is not None:
         ev, descr = r.groups()
 
-        return dict(
+        d = dict(
+                    **d,
                     reports_icecube_event=ev.strip(),
                     icecube_event_descr=descr.strip(),
                 )
-    return {}
+
+        r_t = re.search(r'On (?P<date_time>\d{4}/\d{2}/\d{2} at \d{2}:\d{2}:[\d\.]*?) UT IceCube',
+                  gcntext
+                )
+
+        if r_t:
+            d['event_isot'] = datetime.strptime(
+                    r_t.group('date_time').strip(), 
+                    "%Y/%m/%d at %H:%M:%S.%f"
+                ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+        r_ra = re.search(r'RA: (?P<ra>[\d\.\-]*?) ',
+                  gcntext
+                )
+
+        try:
+            d['ra'] = float(r_ra.group('ra'))
+        except (ValueError, IndexError):
+            pass
+
+        r_dec = re.search(r'Dec: (?P<dec>[\d\.\-\+]*?) ',
+                  gcntext
+                )
+
+        try:
+            d['dec'] = float(r_dec.group('dec'))
+        except (ValueError, IndexError):
+            pass
+
+
+    return d
 
 
 @workflow
