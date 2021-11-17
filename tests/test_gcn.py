@@ -60,6 +60,7 @@ def test_gbm_balrog():
 def test_icecube():
     G = parse_gcn(31085)
 
+    assert G['paper:reports_icecube_event'] == 'IceCube-211116A'
     assert G['paper:event_isot'].strip("\"") == "2021-11-16T10:33:16.050000"
     assert "%.6lg" % float(G['paper:icecube_ra']) == "42.45"
     assert "%.6lg" % float(G['paper:icecube_dec']) == "0.15"
