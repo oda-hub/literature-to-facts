@@ -65,7 +65,13 @@ def test_icecube():
     assert "%.6lg" % float(G['paper:icecube_ra']) == "42.45"
     assert "%.6lg" % float(G['paper:icecube_dec']) == "0.15"
     
+    G = parse_gcn(30957)
 
+    assert G['paper:reports_icecube_event'] == 'IceCube-211023A'
+    assert G['paper:event_isot'].strip("\"") == "2021-10-23T08:31:18.310000"
+    assert "%.6lg" % float(G['paper:icecube_ra']) == "253.3"
+    assert "%.6lg" % float(G['paper:icecube_dec']) == "-1.72"
+    
 def test_learn_gcns():
     import facts.core
     import facts.gcn

@@ -318,7 +318,7 @@ def gcn_integral_countepart_search(gcntext: GCNText):  # ->
 
 @workflow
 def gcn_icecube_circular(gcntext: GCNText):  # ->
-    r = re.search("SUBJECT:(.*?) *?:? *?IceCube observation of a(.*)",
+    r = re.search("SUBJECT:(.*?) *?:?-? *?IceCube observation of a(.*)",
                   gcntext, re.I)
 
     d = {}
@@ -342,7 +342,7 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
                     "%Y/%m/%d at %H:%M:%S.%f"
                 ).strftime("%Y-%m-%dT%H:%M:%S.%f")
 
-        r_ra = re.search(r'RA: (?P<ra>[\d\.\-]*?) ',
+        r_ra = re.search(r'RA: (?P<ra>[\d\.\-\+]*?) ',
                   gcntext
                 )
 
