@@ -108,3 +108,9 @@ def test_atel_long_frb_name():
 
     assert G['paper:mentions_named_event'] == 'FRB20211122A'
     
+
+def test_atel_pks():
+    G = parse_atel(15058)
+
+    assert G['paper:mentions_named_event'] == 'PKS0903-57'
+    
