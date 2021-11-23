@@ -9,7 +9,7 @@ def relevant_keywords():
                 "HAWC", "INTEGRAL", "CTA", "HESS", "MAGIC", "LST", "SKA",
                 "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT",
                 "SPI-ACS", "ISGRI",
-                "FRB", "GRB", "magnetar", "SGR", 
+                "FRB", "GRB", "magnetar", "SGR", "blazar"
                 "GW170817", "GW190425", 
         ]
 
@@ -18,7 +18,7 @@ def mentions_grblike(title, body):  # ->$
     d = {} # type: typing.Dict[str, typing.Union[str, int]]    
 
     for text in title, body:
-        for r in re.findall(r'(IceCube|IC|[a-zA-Z]{3})([ -]?)([0-9\.\-\+]{2,}[A-Z]?)', text):
+        for r in re.findall(r'\b(IceCube|IC|GRB|FRB|PKS|Mrk|HAWC)([ -]?)([0-9\.\-\+]{2,}[A-Z]?)\b', text):
             full_name = f"{r[0]}{r[1]}{r[2]}"
             d['mentions_named_event'] = full_name.replace(' ', '')
             d['mentions_named_event_type'] = r[0]
@@ -28,7 +28,7 @@ def mentions_grblike(title, body):  # ->$
     return d
 
 def mentions_keyword(title, body):  # ->$                                                                                                                                                                
-    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]    
 
     for keyword in relevant_keywords():
         k = keyword.lower()

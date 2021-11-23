@@ -313,6 +313,7 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
         d = dict(
                     **d,
                     reports_icecube_event=ev.strip(),
+                    reports_event=ev.strip(),
                     icecube_event_descr=descr.strip(),
                 )
 
@@ -332,6 +333,7 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
 
         if r_ra is not None:
             d['icecube_ra'] = r_ra.group('ra')
+            d['event_ra'] = r_ra.group('ra')
         
         r_dec = re.search(r'Dec: (?P<dec>[\d\.\-\+]*?) ',
                   gcntext
@@ -339,6 +341,7 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
 
         if r_dec is not None:
             d['icecube_dec'] = r_dec.group('dec')
+            d['event_dec'] = r_dec.group('dec')
         
 
     return d
@@ -423,6 +426,54 @@ def gcn_lvc_integral_counterpart(gcntext: GCNText):  # ->
 
     return {}
 
+
+@workflow
+def gcn_hawc(gcntext: GCNText):  # ->
+    r = re.search(r"SUBJECT:.*?\b(HAWC[\- ]?[0-9]+?[A-Z]?)\b",
+                  gcntext, re.I)
+
+    d = {}
+
+    if r is not None:
+        ev = r.group(1)
+
+        d = dict(
+                    **d,
+                    reports_hawc_event=ev.strip(),
+                    reports_event=ev.strip(),
+                )
+
+        r_t = re.search(r'On (?P<date_time>\d{2} \d{2}, \d{4}, at \d{2}:\d{2}:[\d\.]{2,}) UTC',
+                  gcntext
+                )
+
+        if r_t:
+            d['grb_isot'] = datetime.strptime(
+                    r_t.group('date_time').strip(), 
+                    "%m %d, %Y, at %H:%M:%S.%f"
+                ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+            d['event_isot'] = d['grb_isot']
+
+        r_ra = re.search(r'RA.*?: (?P<ra>[\d\.\-\+]*?) ',
+                  gcntext
+                )
+
+        if r_ra is not None:
+            d['hawc_ra'] = float(r_ra.group('ra'))
+            d['event_ra'] = float(r_ra.group('ra'))
+        
+        r_dec = re.search(r'Dec.*?: (?P<dec>[\d\.\-\+]*?) ',
+                  gcntext
+                )
+
+        if r_dec is not None:
+            d['hawc_dec'] = float(r_dec.group('dec'))
+            d['event_dec'] = float(r_dec.group('dec'))
+        
+
+    return d
+
+
 @workflow
 def submitter(gcntext: GCNText):
     r = re.search("FROM:(.*?)<(.*?)>\n", gcntext, re.M | re.S)
@@ -452,3 +503,4 @@ def authors(gcntext: GCNText):
 
 if __name__ == "__main__":
     cli()
+

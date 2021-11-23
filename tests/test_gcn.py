@@ -114,3 +114,22 @@ def test_atel_pks():
 
     assert G['paper:mentions_named_event'] == 'PKS0903-57'
     
+
+def test_gbm_allnamed():
+    G = parse_gcn(31102) 
+
+    # todo: complete
+    # assert G['paper:grb_isot'].strip("\"") == "2021-08-12T16:47:01.010000"
+    # assert G['paper:gbm_trigger_id'] == 650479626
+    # assert G['paper:url'].strip("\"") == "https://grb.mpe.mpg.de/grb/GRB210812699/"
+    
+
+def test_hawc():
+    G = parse_gcn(31106) 
+
+    assert G['paper:grb_isot'].strip("\"") == "2021-11-23T03:52:23.500000"
+    assert G['paper:mentions_named_hawc'] == "HAWC-211123A"
+    assert G['paper:hawc_ra'] == 34.12
+    assert G['paper:hawc_dec'] == -8.05
+
+    
