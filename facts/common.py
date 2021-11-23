@@ -18,7 +18,7 @@ def mentions_grblike(title, body):  # ->$
     d = {} # type: typing.Dict[str, typing.Union[str, int]]    
 
     for text in title, body:
-        for r in re.findall(r'(GRB|FRB|IceCube|IC|PKS|Mrk)([ -]?)([0-9\.\-\+]+[A-Z]?)', text):
+        for r in re.findall(r'(IceCube|IC|[a-zA-Z]{3})([ -]?)([0-9\.\-\+]{2,}[A-Z]?)', text):
             full_name = f"{r[0]}{r[1]}{r[2]}"
             d['mentions_named_event'] = full_name.replace(' ', '')
             d['mentions_named_event_type'] = r[0]
