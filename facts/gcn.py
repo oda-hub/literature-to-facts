@@ -9,8 +9,8 @@ from datetime import datetime
 import requests
 import click
 import rdflib # type: ignore
-from colorama import Fore, Style # type: ignore
-
+from colorama import Fore, Style
+from facts import common
 from facts.core import workflow
 
 logger = logging.getLogger()
@@ -100,31 +100,15 @@ def gcn_instrument(gcntext: GCNText):
     return dict(instrument=instruments)
 
 
-def relevant_keywords():
-    # TODO: fetch from KG, cache with expiration
-    return [ 
-                "HAWC", "INTEGRAL", "CTA", "HESS", "MAGIC", "LST", "SKA",
-                "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT",
-                "SPI-ACS", "ISGRI",
-                "FRB", "GRB", "magnetar", "SGR", 
-                "GW170817", "GW190425", 
-        ]
+@workflow
+def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
+    return common.mentions_keyword("", gcntext)
 
 
 @workflow
-def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
-    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+def mentions_named(entry: GCNText):  # ->
+    return common.mentions_grblike("", entry)
 
-    for keyword in relevant_keywords():
-        k = keyword.lower()
-
-        n = len(re.findall(keyword, gcntext))
-        if n>0:
-            d['mentions_'+k] = "body"
-        if n>1:
-            d['mentions_'+k+'_times'] = n
-
-    return d
 
 @workflow
 def fermi_realtime(gcntext: GCNText):  # ->$                                                                                                                                                                
@@ -346,20 +330,16 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
                   gcntext
                 )
 
-        try:
+        if r_ra is not None:
             d['icecube_ra'] = r_ra.group('ra')
-        except (ValueError, IndexError):
-            pass
-
+        
         r_dec = re.search(r'Dec: (?P<dec>[\d\.\-\+]*?) ',
                   gcntext
                 )
 
-        try:
+        if r_dec is not None:
             d['icecube_dec'] = r_dec.group('dec')
-        except (ValueError, IndexError):
-            pass
-
+        
 
     return d
 

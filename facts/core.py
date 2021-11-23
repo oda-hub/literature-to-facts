@@ -52,15 +52,21 @@ def workflow_id(entry):
     input_type = entry['arg_type']
     input_value = entry['arg']
 
+    default = "http://odahub.io/ontology/paper#problematic"+input_type.__name__+hashlib.sha224(repr(input_value).encode()).hexdigest()[:8]
+
     for w in workflow_context:
+        logger.info('searching for identity %s', w)
         if input_type in w['signature'].values() and w['name'] == 'identity':
             try:
                 return w['function'](input_value)
             except Exception as e:
-                return "http://odahub.io/ontology/paper#problematic"+input_type.__name__+hashlib.sha224(input_value.encode()).hexdigest()[:8]
+                logger.debug('problem: %s', e)
+                raise
+
+    return default
 
 
-def workflows_for_input(entry, output: str='list'):
+def workflows_for_input(entry, output: str='list') -> typing.Union[dict, tuple, str]:
     input_type = entry['arg_type']
     input_value = entry['arg']
 
@@ -112,7 +118,7 @@ def workflows_for_input(entry, output: str='list'):
 
     # valuable?
     if not any(['mentions' in (" ".join(f)) for f in facts]):
-        logger.debug("gcn {Fore.RED}not valuable{Style.RESET_ALL}: %s", [" ".join(f) for f in facts])
+        logger.debug(f"paper {Fore.RED}not valuable{Style.RESET_ALL}: %s", [" ".join(f) for f in facts])
         return c_id, []
 
     if output == 'list':
@@ -140,6 +146,8 @@ def workflows_by_input(nthreads=1, input_types=None):
 
     collected_inputs = []
 
+    t0 = time.time()
+
     for w in workflow_context:
         logger.debug(f"{Fore.BLUE} {w['name']} {Style.RESET_ALL}")
         logger.debug(f"   has " + " ".join([f"{k}:" + getattr(v, "__name__","?") for k,v in w['signature'].items()]))
@@ -155,15 +163,14 @@ def workflows_by_input(nthreads=1, input_types=None):
         if larg not in input_types:
             continue
 
-        logger.info(f"{Fore.YELLOW} valid input generator for {Fore.MAGENTA} {larg.__name__} {Style.RESET_ALL} {Style.RESET_ALL}")
+        logger.info(f"{Fore.YELLOW} valid input generator for {Fore.MAGENTA} {larg.__name__} : {w['function']} {Style.RESET_ALL} {Style.RESET_ALL}")
 
         for i, arg in enumerate(w['function']()):
             collected_inputs.append(dict(arg_type=larg, arg=arg))
             logger.debug(f"{Fore.BLUE} input: {Fore.MAGENTA} {str(arg):.100s} {Style.RESET_ALL} {Style.RESET_ALL}")
          
-        logger.info(f"collected {i} arguments")
+        logger.info("collected %d arguments", len(collected_inputs))
 
-    t0 = time.time()
     logger.info(f"inputs search done in in {time.time()-t0}")
 
 

@@ -12,6 +12,7 @@ import glob
 from datetime import datetime
 
 from facts.core import workflow
+from facts import common
 
 logger = logging.getLogger()
 
@@ -45,9 +46,9 @@ def parse_html(html):
     logger.debug("got file of %s bytes", len(index))
 
     es=[]
-    for l in re.findall('<tr valign="top"><td class="num">(\d+)</td>'+
-                        '<td class="title"><a href="(http.*?)">(.*?)</a></td>'+
-                        '<td class="author" valign="top">(.*?)<BR><EM>(.*?)</EM></TD></TR>',
+    for l in re.findall(r'<tr valign="top"><td class="num">(\d+)</td>'+
+                        r'<td class="title"><a href="(http.*?)">(.*?)</a></td>'+
+                        r'<td class="author" valign="top">(.*?)<BR><EM>(.*?)</EM></TD></TR>',
                         index,
                         re.I | re.M | re.S 
                         ):
@@ -66,9 +67,9 @@ def fetch():
     index = requests.get('http://www.astronomerstelegram.org/').text
 
     es=[]
-    for l in re.findall('<TR valign=top><TD  class="num"  >(\d+)</TD>'+
-                        '<TD class="title"><A HREF="(http.*?)">(.*?)</A></TD>'+
-                        '<TD  class="author" valign=top>(.*?)<BR><EM>(.*?)</EM></TD></TR>',
+    for l in re.findall(r'<TR valign=top><TD  class="num"  >(\d+)</TD>'+
+                        r'<TD class="title"><A HREF="(http.*?)">(.*?)</A></TD>'+
+                        r'<TD  class="author" valign=top>(.*?)<BR><EM>(.*?)</EM></TD></TR>',
                         index):
         entry = dict(zip(['atelid', 'url', 'title', 'authors', 'date'], l))
         logging.debug("%s", entry)
@@ -78,19 +79,13 @@ def fetch():
 
 @workflow
 def mentions_keyword(entry: ATelEntry):  # ->
-    d = {} # type: typing.Dict[str, typing.Any]
+    return common.mentions_keyword(entry['title'], "")
 
-    for keyword in "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR":
-        k = keyword.lower()
 
-        for field in 'title',:
-            n = len(re.findall(keyword, entry[field]))
-            if n>0:
-                d['mentions_'+k] = field
-            if n>1:
-                d['mentions_'+k+'_times'] = n
+@workflow
+def mentions_named(entry: ATelEntry):  # ->
+    return common.mentions_grblike(entry['title'], "")
 
-    return d
 
 @workflow
 def basic_meta(entry: ATelEntry):  # ->$                                                                                
@@ -107,6 +102,7 @@ def list_entries() -> typing.List[ATelEntry]:
     es = json.load(open('atels.json'))
 
     return es
+
 
 @workflow
 def identity(entry: ATelEntry) -> str:
