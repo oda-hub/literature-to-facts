@@ -317,13 +317,13 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
                     icecube_event_descr=descr.strip(),
                 )
 
-        r_t = re.search(r'On (?P<date_time>\d{4}/\d{2}/\d{2} at \d{2}:\d{2}:[\d\.]*?) UT IceCube',
+        r_t = re.search(r'On (?P<date_time>\d{4}[/\- ]\d{2}[/\- ]\d{2} at \d{2}:\d{2}:[\d\.]*?) UT IceCube',
                   gcntext
                 )
 
         if r_t:
             d['event_isot'] = datetime.strptime(
-                    r_t.group('date_time').strip(), 
+                    r_t.group('date_time').strip().replace("-", "/"), 
                     "%Y/%m/%d at %H:%M:%S.%f"
                 ).strftime("%Y-%m-%dT%H:%M:%S.%f")
 

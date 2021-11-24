@@ -94,6 +94,13 @@ def test_icecube():
     assert G['paper:event_isot'].strip("\"") == "2021-10-23T08:31:18.310000"
     assert "%.6lg" % float(G['paper:icecube_ra']) == "253.3"
     assert "%.6lg" % float(G['paper:icecube_dec']) == "-1.72"
+
+    G = parse_gcn(31110)
+
+    assert G['paper:reports_icecube_event'] == 'IceCube-211123A'
+    assert G['paper:event_isot'].strip("\"") == "2021-11-23T14:25:22.600000"
+    assert "%.6lg" % float(G['paper:icecube_ra']) == "265.52"
+    assert "%.6lg" % float(G['paper:icecube_dec']) == "7.33"
     
 
 def test_learn_gcns():
