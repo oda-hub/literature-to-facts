@@ -1,3 +1,4 @@
+from collections import defaultdict
 import re
 import typing
 from facts.core import workflow
@@ -14,16 +15,17 @@ def relevant_keywords():
         ]
 
 
+
 def mentions_grblike(title, body):  # ->$                                                                                                                                                                
-    d = {} # type: typing.Dict[str, typing.Union[str, int]]    
+    d = defaultdict(list) 
 
     for text in title, body:
         for r in re.findall(r'\b(IceCube|IC|GRB|FRB|PKS|Mrk|HAWC)([ -]?)([0-9\.\-\+]{2,}[A-Z]?)\b', text):
             full_name = f"{r[0]}{r[1]}{r[2]}"
-            d['mentions_named_event'] = full_name.replace(' ', '')
-            d['mentions_named_event_type'] = r[0]
+            d['mentions_named_event'].append(full_name.replace(' ', ''))
+            d['mentions_named_event_type'].append(r[0])
 
-            d[f'mentions_named_{r[0].lower()}'] = full_name.replace(' ', '')
+            d[f'mentions_named_{r[0].lower()}'].append(full_name.replace(' ', ''))
     
     return d
 

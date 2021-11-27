@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import typing
 import hashlib
@@ -125,10 +126,11 @@ def workflows_for_input(entry, output: str='list') -> typing.Union[dict, tuple, 
         return c_id, [" ".join(f) for f in facts]
     
     if output == 'dict':
-        return {
-                    p.replace("http://odahub.io/ontology/paper#", "paper:").strip("<>"): rdflib.util.from_n3(o).value
-                    for s, p, o in facts
-               }
+        D = defaultdict(list)
+        for s, p, o in facts:
+            D[p.replace("http://odahub.io/ontology/paper#", "paper:").strip("<>")].append(rdflib.util.from_n3(o).value)
+
+        return {k: v[0] if len(v) == 1 else list(sorted(set(v))) for k, v in D.items()}
 
     if output == 'n3':
         G = rdflib.Graph()

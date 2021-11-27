@@ -154,3 +154,8 @@ def test_hawc():
     assert G['paper:hawc_dec'] == -8.05
 
     
+def test_many_named():
+    G = parse_gcn(31132) 
+
+    assert G['paper:mentions_named_event'] == ['IC211125A', 'IceCube-211125A']
+    
