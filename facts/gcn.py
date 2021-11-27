@@ -317,31 +317,81 @@ def gcn_icecube_circular(gcntext: GCNText):  # ->
                     icecube_event_descr=descr.strip(),
                 )
 
-        r_t = re.search(r'On (?P<date_time>\d{4}[/\- ]\d{2}[/\- ]\d{2} at \d{2}:\d{2}:[\d\.]*?) UT IceCube',
-                  gcntext
-                )
+        #TODO: should be able to common URLs and re-use
 
-        if r_t:
-            d['event_isot'] = datetime.strptime(
-                    r_t.group('date_time').strip().replace("-", "/"), 
-                    "%Y/%m/%d at %H:%M:%S.%f"
-                ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+        r_notice_url = re.search("(https://gcn.gsfc.nasa.gov/.*?\.amon)", gcntext)
 
-        r_ra = re.search(r'RA: (?P<ra>[\d\.\-\+]*?) ',
-                  gcntext
-                )
+        if r_notice_url is not None:
+            gcn_notice_block_text = requests.get(r_notice_url.group(1)).text
 
-        if r_ra is not None:
-            d['icecube_ra'] = r_ra.group('ra')
-            d['event_ra'] = r_ra.group('ra')
+            notice_sep = "//////////////////////////////////////////////////////////////////////"
+            for gcn_notice_text in gcn_notice_block_text.split(notice_sep):
+                for line in gcn_notice_text.split('\n'):
+                    k = line[:18].strip().strip(":").lower()
+                    raw_v = line[18:].strip()
+                    if k != "":                      
+                        v = raw_v
+
+                        r_deg = re.match(r"^([\d\.+\-]*?)d", raw_v)                    
+                        if r_deg:
+                            v = float(r_deg.group(1))
+
+                        if k == "discovery_date":
+                            r_date = re.search(r"(\d{2}/\d{2}/\d{2}) \(yy/mm/dd\)", raw_v)
+                            if r_date:                        
+                                v = r_date.group(1)
+                                k = 'date_ymd'
+                            else:
+                                raise RuntimeError
+
+                        if k == "discovery_time":
+                            r_time = re.search(r"\{(\d{2}:\d{2}:[\d\.]+)\} UT", raw_v)
+                            if r_time:                        
+                                v = r_time.group(1)
+                                k = 'time_hms'
+                            else:
+                                raise RuntimeError
+
+                        d[f'amon_gcn_notice_{k}'] = v
+        else:
+            r_t = re.search(r'On (?P<date_time>\d{4}[/\- ]\d{2}[/\- ]\d{2} at \d{2}:\d{2}:[\d\.]*?) UT IceCube',
+                        gcntext
+                    )                
+
+            if r_t:
+                d['event_isot'] = datetime.strptime(
+                        r_t.group('date_time').strip().replace("-", "/"), 
+                        "%Y/%m/%d at %H:%M:%S.%f"
+                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+            r_ra = re.search(r'RA: (?P<ra>[\d\.\-\+]*?) ',
+                    gcntext
+                    )
+
+            if r_ra is not None:
+                d['icecube_ra'] = r_ra.group('ra')
+                d['event_ra'] = r_ra.group('ra')
+            
+            r_dec = re.search(r'Dec: (?P<dec>[\d\.\-\+]*?) ',
+                    gcntext
+                    )
+
+            if r_dec is not None:
+                d['icecube_dec'] = r_dec.group('dec')
+
+        if 'icecube_ra' in d and 'icecube_dec' in d:
+            d['event_ra'] = d['icecube_ra']
+            d['event_dec'] = d['icecube_dec']
+            
+        if 'amon_gcn_notice_src_ra' in d and 'amon_gcn_notice_src_dec' in d:
+            d['event_ra'] = d['amon_gcn_notice_src_ra']
+            d['event_dec'] = d['amon_gcn_notice_src_dec']
         
-        r_dec = re.search(r'Dec: (?P<dec>[\d\.\-\+]*?) ',
-                  gcntext
-                )
-
-        if r_dec is not None:
-            d['icecube_dec'] = r_dec.group('dec')
-            d['event_dec'] = r_dec.group('dec')
+        if 'amon_gcn_notice_time_hms' in d and 'amon_gcn_notice_date_ymd' in d:
+            d['event_isot'] = datetime.strptime(
+                        d['amon_gcn_notice_date_ymd'] + " " + d['amon_gcn_notice_time_hms'], 
+                        "%y/%m/%d %H:%M:%S.%f"
+                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")
         
 
     return d

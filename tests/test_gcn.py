@@ -81,27 +81,41 @@ def test_gbm_balrog():
     
 
 def test_icecube():
+    G = parse_gcn(31126)
+
+    assert G['paper:reports_icecube_event'] == 'IceCube-211125A'
+    assert G['paper:event_isot'].strip("\"") == "2021-11-25T06:22:21.550000"
+    assert float(G['paper:event_ra']) == 43.59
+    assert float(G['paper:event_dec']) == 22.5899
+    
+
     G = parse_gcn(31085)
 
     assert G['paper:reports_icecube_event'] == 'IceCube-211116A'
     assert G['paper:event_isot'].strip("\"") == "2021-11-16T10:33:16.050000"
-    assert "%.6lg" % float(G['paper:icecube_ra']) == "42.45"
-    assert "%.6lg" % float(G['paper:icecube_dec']) == "0.15"
+    assert float(G['paper:event_ra']) == 42.45
+    assert float(G['paper:event_dec']) == 0.15
     
     G = parse_gcn(30957)
 
     assert G['paper:reports_icecube_event'] == 'IceCube-211023A'
     assert G['paper:event_isot'].strip("\"") == "2021-10-23T08:31:18.310000"
-    assert "%.6lg" % float(G['paper:icecube_ra']) == "253.3"
-    assert "%.6lg" % float(G['paper:icecube_dec']) == "-1.72"
+    assert float(G['paper:event_ra']) == 253.3
+    assert float(G['paper:event_dec']) == -1.7199
 
     G = parse_gcn(31110)
 
     assert G['paper:reports_icecube_event'] == 'IceCube-211123A'
     assert G['paper:event_isot'].strip("\"") == "2021-11-23T14:25:22.600000"
-    assert "%.6lg" % float(G['paper:icecube_ra']) == "265.52"
-    assert "%.6lg" % float(G['paper:icecube_dec']) == "7.33"
+    assert float(G['paper:event_ra']) == 265.5199
+    assert float(G['paper:event_dec']) == 7.33
+
+
+def test_icecube_follow_up():
+    G = parse_gcn(31120)
     
+    assert G['paper:mentions_named_event'] == 'IceCube-211123A'
+
 
 def test_learn_gcns():
     import facts.core
