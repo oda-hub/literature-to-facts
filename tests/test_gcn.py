@@ -29,7 +29,12 @@ def test_fermirt():
 
     assert G['paper:grb_isot'].strip("\"") == "2020-10-20T17:33:54"
 
+
 def test_swift():
     G = parse_gcn(28666)
 
     assert G['paper:grb_isot'].strip("\"") == "2020-10-17T09:46:31"
+
+    G = parse_gcn(31182)
+
+    assert G['paper:swift_trigger_id'] == "1088376"
