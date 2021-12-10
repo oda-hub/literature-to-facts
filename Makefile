@@ -13,7 +13,7 @@ push: build
 	docker push $(repo):$(tag)
 
 install: push
-	helm upgrade --install facts chart --set image.tag=$(tag)
+	helm upgrade --install facts chart --set image.tag=$(tag) --namespace default
 
 run: build
 	docker run $(repo):$(tag) python -m facts.tools daily

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import typing
 import hashlib
@@ -52,15 +53,21 @@ def workflow_id(entry):
     input_type = entry['arg_type']
     input_value = entry['arg']
 
+    default = "http://odahub.io/ontology/paper#problematic"+input_type.__name__+hashlib.sha224(repr(input_value).encode()).hexdigest()[:8]
+
     for w in workflow_context:
+        logger.info('searching for identity %s', w)
         if input_type in w['signature'].values() and w['name'] == 'identity':
             try:
                 return w['function'](input_value)
             except Exception as e:
-                return "http://odahub.io/ontology/paper#problematic"+input_type.__name__+hashlib.sha224(input_value.encode()).hexdigest()[:8]
+                logger.debug('problem: %s', e)
+                raise
+
+    return default
 
 
-def workflows_for_input(entry, output: str='list'):
+def workflows_for_input(entry, output: str='list') -> typing.Union[dict, tuple, str]:
     input_type = entry['arg_type']
     input_value = entry['arg']
 
@@ -93,19 +100,14 @@ def workflows_for_input(entry, output: str='list'):
                     vs = [v]
 
                 for _v in vs:
-                    try:
-                        _v = float(_v)
-                    except:
-                        pass
+                    # try:
+                    #     _v = float(_v)
+                    # except:
+                    #     pass
 
-                    if isinstance(_v, float):
-                        _v = "%.20lg" % _v
-                    else:
-                        _v = str(_v)
-                        _v = re.sub(r"[\$\\\"]", "", _v)
-                        _v = "\""+str(_v)+"\""
+                    _v = rdflib.Literal(_v).n3()
 
-                    data = f'<{c_ns}#{c_id}>', f'<{c_ns}#{k}>', f'{_v}'
+                    data = rdflib.URIRef(f'<{c_ns}#{c_id}>'), f'<{c_ns}#{k}>', f'{_v}'
 
                     facts.append(data)
 
@@ -117,17 +119,18 @@ def workflows_for_input(entry, output: str='list'):
 
     # valuable?
     if not any(['mentions' in (" ".join(f)) for f in facts]):
-        logger.debug("paper {Fore.RED}not valuable{Style.RESET_ALL}: %s", [" ".join(f) for f in facts])
+        logger.debug(f"paper {Fore.RED}not valuable{Style.RESET_ALL}: %s", [" ".join(f) for f in facts])
         return c_id, []
 
     if output == 'list':
         return c_id, [" ".join(f) for f in facts]
     
     if output == 'dict':
-        return {
-                    p.replace("http://odahub.io/ontology/paper#", "paper:").strip("<>"): o
-                    for s, p, o in facts
-               }
+        D = defaultdict(list)
+        for s, p, o in facts:
+            D[p.replace("http://odahub.io/ontology/paper#", "paper:").strip("<>")].append(rdflib.util.from_n3(o).value)
+
+        return {k: v[0] if len(v) == 1 else list(sorted(set(v))) for k, v in D.items()}
 
     if output == 'n3':
         G = rdflib.Graph()
@@ -145,6 +148,8 @@ def workflows_by_input(nthreads=1, input_types=None):
 
     collected_inputs = []
 
+    t0 = time.time()
+
     for w in workflow_context:
         logger.debug(f"{Fore.BLUE} {w['name']} {Style.RESET_ALL}")
         logger.debug(f"   has " + " ".join([f"{k}:" + getattr(v, "__name__","?") for k,v in w['signature'].items()]))
@@ -160,15 +165,14 @@ def workflows_by_input(nthreads=1, input_types=None):
         if larg not in input_types:
             continue
 
-        logger.info(f"{Fore.YELLOW} valid input generator for {Fore.MAGENTA} {larg.__name__} {Style.RESET_ALL} {Style.RESET_ALL}")
+        logger.info(f"{Fore.YELLOW} valid input generator for {Fore.MAGENTA} {larg.__name__} : {w['function']} {Style.RESET_ALL} {Style.RESET_ALL}")
 
         for i, arg in enumerate(w['function']()):
             collected_inputs.append(dict(arg_type=larg, arg=arg))
             logger.debug(f"{Fore.BLUE} input: {Fore.MAGENTA} {str(arg):.100s} {Style.RESET_ALL} {Style.RESET_ALL}")
          
-        logger.info(f"collected {i} arguments")
+        logger.info("collected %d arguments", len(collected_inputs))
 
-    t0 = time.time()
     logger.info(f"inputs search done in in {time.time()-t0}")
 
 
@@ -203,14 +207,19 @@ def workflows_by_input(nthreads=1, input_types=None):
     else:
         for fact in facts:
             D  = f'INSERT DATA {{ {fact} }}'
-            logger.debug(D)
+            logger.info(D)
             try:
                 G.update(D)
             except Exception as e:
                 logger.error(f"problem {e}  adding \"{D}\"")
                 raise Exception(f"problem {e}  adding \"{D}\"")
 
-    return G.serialize(format='n3').decode()
+    r = G.serialize(format='n3')
+
+    if isinstance(r, bytes):
+        return r.decode()
+    else:
+        return r
 
 if __name__ == "__main__":
     cli()

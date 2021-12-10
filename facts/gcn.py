@@ -9,8 +9,8 @@ from datetime import datetime
 import requests
 import click
 import rdflib # type: ignore
-from colorama import Fore, Style # type: ignore
-
+from colorama import Fore, Style
+from facts import common
 from facts.core import workflow
 
 logger = logging.getLogger()
@@ -102,25 +102,19 @@ def gcn_instrument(gcntext: GCNText):
 
 @workflow
 def mentions_keyword(gcntext: GCNText):  # ->$                                                                                                                                                                
-    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+    return common.mentions_keyword("", gcntext)
 
-    for keyword in "HAWC", "INTEGRAL", "FRB", "GRB", "GW170817", "GW190425", "magnetar", "SGR", "SPI-ACS", "IceCube", "LIGO/Virgo", "ANTARES", "Fermi/LAT":
-        k = keyword.lower()
 
-        n = len(re.findall(keyword, gcntext))
-        if n>0:
-            d['mentions_'+k] = "body"
-        if n>1:
-            d['mentions_'+k+'_times'] = n
+@workflow
+def mentions_named(entry: GCNText):  # ->
+    return common.mentions_grblike("", entry)
 
-    return d
 
 @workflow
 def fermi_realtime(gcntext: GCNText):  # ->$                                                                                                                                                                
     d = {} # type: typing.Dict[str, typing.Union[str, int]]
 
     r = re.search(r"At (.*?), the Fermi Gamma-ray Burst Monitor \(GBM\) triggered", gcntext)
-    #r = re.search(r"At (\d{2}:\d{2}:\d{2} UT on .*?), the Fermi Gamma-ray Burst Monitor (GBM) triggered", gcntext)
     
     if r is not None:
         d['grb_isot'] = datetime.strptime(
@@ -128,7 +122,56 @@ def fermi_realtime(gcntext: GCNText):  # ->$
                 "%H:%M:%S UT on %d %b %Y"
             ).strftime("%Y-%m-%dT%H:%M:%S")
 
+
+    r = re.search(r"The on-ground calculated location, using the Fermi GBM trigger data.*?"
+                  r"RA = (?P<ra>[\d\.\-\+]*?), Dec = (?P<dec>[\d\.\-\+]*?) .*?"
+                  r"with a statistical uncertainty of (?P<rad>[\d\.\-\+]*?) degrees.",
+                  gcntext
+                  )
+
+    if r is not None:
+        d['gbm_ra'] = r.group('ra')
+        d['gbm_dec'] = r.group('dec')
+        d['gbm_rad'] = r.group('rad')
+
     return d
+
+@workflow
+def fermi_v2(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+
+    r = re.search(r"At (?P<grb_date>[0-9:\.]*? UT on [0-9]{1,2} [a-zA-Z]*? [0-9]{4}?).*?, the Fermi Gamma-Ray Burst Monitor \(GBM\) triggered and located (?P<name>GRB [0-9]{6}[A-G])", 
+                   re.sub("[ \n]+", " ", gcntext))
+        
+    if r is not None:
+        d['grb_isot'] = datetime.strptime(
+                r.group('grb_date').strip(), 
+                "%H:%M:%S.%f UT on %d %B %Y"
+            ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+    return d
+
+@workflow
+def gbm_balrog(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+
+    r = re.search(r"(?P<url_json>https://.*?json)", gcntext)
+
+    if r:
+        d['url_json'] = r.group('url_json')
+        d['url'] = d['url_json'].replace('/json', '/')
+
+        j_data = requests.get(d['url_json']).json()
+
+        d['grb_isot'] = j_data[0]['grb_params'][0]['trigger_timestamp'].replace("Z", "")
+        d['gbm_trigger_id'] = int(j_data[0]['grb_params'][0]['trigger_number'])
+        d['balrog_ra'] = j_data[0]['grb_params'][0]['balrog_ra']
+        d['balrog_ra_err'] = j_data[0]['grb_params'][0]['balrog_ra_err']
+        d['balrog_dec'] = j_data[0]['grb_params'][0]['balrog_dec']
+        d['balrog_dec_err'] = j_data[0]['grb_params'][0]['balrog_dec_err']
+    
+    return d
+
 
 @workflow
 def swift_detected(gcntext: GCNText):  # ->$                                                                                                                                                                
@@ -276,17 +319,99 @@ def gcn_integral_countepart_search(gcntext: GCNText):  # ->
 
 @workflow
 def gcn_icecube_circular(gcntext: GCNText):  # ->
-    r = re.search("SUBJECT:(.*?)- IceCube observation of a(.*)",
+    r = re.search("SUBJECT:(.*?) *?:?-? *?IceCube observation of a(.*)",
                   gcntext, re.I)
+
+    d = {}
 
     if r is not None:
         ev, descr = r.groups()
 
-        return dict(
+        d = dict(
+                    **d,
                     reports_icecube_event=ev.strip(),
+                    reports_event=ev.strip(),
                     icecube_event_descr=descr.strip(),
                 )
-    return {}
+
+        #TODO: should be able to common URLs and re-use
+
+        r_notice_url = re.search("(https://gcn.gsfc.nasa.gov/.*?\.amon)", gcntext)
+
+        if r_notice_url is not None:
+            gcn_notice_block_text = requests.get(r_notice_url.group(1)).text
+
+            notice_sep = "//////////////////////////////////////////////////////////////////////"
+            for gcn_notice_text in gcn_notice_block_text.split(notice_sep):
+                for line in gcn_notice_text.split('\n'):
+                    k = line[:18].strip().strip(":").lower()
+                    raw_v = line[18:].strip()
+                    if k != "":                      
+                        v = raw_v
+
+                        r_deg = re.match(r"^([\d\.+\-]*?)d", raw_v)                    
+                        if r_deg:
+                            v = float(r_deg.group(1))
+
+                        if k == "discovery_date":
+                            r_date = re.search(r"(\d{2}/\d{2}/\d{2}) \(yy/mm/dd\)", raw_v)
+                            if r_date:                        
+                                v = r_date.group(1)
+                                k = 'date_ymd'
+                            else:
+                                raise RuntimeError
+
+                        if k == "discovery_time":
+                            r_time = re.search(r"\{(\d{2}:\d{2}:[\d\.]+)\} UT", raw_v)
+                            if r_time:                        
+                                v = r_time.group(1)
+                                k = 'time_hms'
+                            else:
+                                raise RuntimeError
+
+                        d[f'amon_gcn_notice_{k}'] = v
+        else:
+            r_t = re.search(r'On (?P<date_time>\d{4}[/\- ]\d{2}[/\- ]\d{2} at \d{2}:\d{2}:[\d\.]*?) UT IceCube',
+                        gcntext
+                    )                
+
+            if r_t:
+                d['event_isot'] = datetime.strptime(
+                        r_t.group('date_time').strip().replace("-", "/"), 
+                        "%Y/%m/%d at %H:%M:%S.%f"
+                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+            r_ra = re.search(r'RA: (?P<ra>[\d\.\-\+]*?) ',
+                    gcntext
+                    )
+
+            if r_ra is not None:
+                d['icecube_ra'] = r_ra.group('ra')
+                d['event_ra'] = r_ra.group('ra')
+            
+            r_dec = re.search(r'Dec: (?P<dec>[\d\.\-\+]*?) ',
+                    gcntext
+                    )
+
+            if r_dec is not None:
+                d['icecube_dec'] = r_dec.group('dec')
+
+        if 'icecube_ra' in d and 'icecube_dec' in d:
+            d['event_ra'] = d['icecube_ra']
+            d['event_dec'] = d['icecube_dec']
+            
+        if 'amon_gcn_notice_src_ra' in d and 'amon_gcn_notice_src_dec' in d:
+            d['event_ra'] = d['amon_gcn_notice_src_ra']
+            d['event_dec'] = d['amon_gcn_notice_src_dec']
+        
+        if 'amon_gcn_notice_time_hms' in d and 'amon_gcn_notice_date_ymd' in d:
+            d['event_isot'] = datetime.strptime(
+                        d['amon_gcn_notice_date_ymd'] + " " + d['amon_gcn_notice_time_hms'], 
+                        "%y/%m/%d %H:%M:%S.%f"
+                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+        
+
+    return d
 
 
 @workflow
@@ -368,6 +493,54 @@ def gcn_lvc_integral_counterpart(gcntext: GCNText):  # ->
 
     return {}
 
+
+@workflow
+def gcn_hawc(gcntext: GCNText):  # ->
+    r = re.search(r"SUBJECT:.*?\b(HAWC[\- ]?[0-9]+?[A-Z]?)\b",
+                  gcntext, re.I)
+
+    d = {}
+
+    if r is not None:
+        ev = r.group(1)
+
+        d = dict(
+                    **d,
+                    reports_hawc_event=ev.strip(),
+                    reports_event=ev.strip(),
+                )
+
+        r_t = re.search(r'On (?P<date_time>\d{2} \d{2}, \d{4}, at \d{2}:\d{2}:[\d\.]{2,}) UTC',
+                  gcntext
+                )
+
+        if r_t:
+            d['grb_isot'] = datetime.strptime(
+                    r_t.group('date_time').strip(), 
+                    "%m %d, %Y, at %H:%M:%S.%f"
+                ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+            d['event_isot'] = d['grb_isot']
+
+        r_ra = re.search(r'RA.*?: (?P<ra>[\d\.\-\+]*?) ',
+                  gcntext
+                )
+
+        if r_ra is not None:
+            d['hawc_ra'] = float(r_ra.group('ra'))
+            d['event_ra'] = float(r_ra.group('ra'))
+        
+        r_dec = re.search(r'Dec.*?: (?P<dec>[\d\.\-\+]*?) ',
+                  gcntext
+                )
+
+        if r_dec is not None:
+            d['hawc_dec'] = float(r_dec.group('dec'))
+            d['event_dec'] = float(r_dec.group('dec'))
+        
+
+    return d
+
+
 @workflow
 def submitter(gcntext: GCNText):
     r = re.search("FROM:(.*?)<(.*?)>\n", gcntext, re.M | re.S)
@@ -397,3 +570,4 @@ def authors(gcntext: GCNText):
 
 if __name__ == "__main__":
     cli()
+
