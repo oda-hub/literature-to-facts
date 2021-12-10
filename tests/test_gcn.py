@@ -1,3 +1,4 @@
+import pytest
 import logging
 
 from facts.arxiv import list_entries
@@ -70,7 +71,7 @@ def test_swift():
 
     G = parse_gcn(31182)
 
-    assert G['paper:swift_trigger_id'] == "1088376"
+    assert G['paper:swift_trigger_id'] == 1088376
 
 
 
@@ -132,14 +133,15 @@ def test_icecube():
 def test_icecube_follow_up():
     G = parse_gcn(31120)
     
-    assert G['paper:mentions_named_event'] == 'IceCube-211123A'
+    assert G['paper:mentions_named_event'] == ['IceCube-211123A']
 
 
+@pytest.mark.skip(reason='long')
 def test_learn_gcns():
     import facts.core
     import facts.gcn
 
-    t = facts.core.workflows_by_input(1, input_types=[facts.gcn.GCNText])
+    t = facts.core.workflows_by_input(1, input_types=[facts.gcn.GCNText], max_inputs=10)
     
 
 def test_atel_long_frb_name():
@@ -167,7 +169,7 @@ def test_hawc():
     G = parse_gcn(31106) 
 
     assert G['paper:grb_isot'].strip("\"") == "2021-11-23T03:52:23.500000"
-    assert G['paper:mentions_named_hawc'] == "HAWC-211123A"
+    assert G['paper:mentions_named_hawc'] == ["HAWC-211123A"]
     assert G['paper:hawc_ra'] == 34.12
     assert G['paper:hawc_dec'] == -8.05
 
@@ -179,4 +181,6 @@ def test_many_named():
     
 
 def test_atel_2sources():
-    parse_atel(15100)
+    G = parse_atel(15100)
+
+    assert G['paper:mentions_named_event'] == ['IceCube-211208A', 'PKS0735+17']
