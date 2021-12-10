@@ -117,7 +117,7 @@ def workflows_for_input(entry, output: str='list'):
 
     # valuable?
     if not any(['mentions' in (" ".join(f)) for f in facts]):
-        logger.debug("gcn {Fore.RED}not valuable{Style.RESET_ALL}: %s", [" ".join(f) for f in facts])
+        logger.debug("paper {Fore.RED}not valuable{Style.RESET_ALL}: %s", [" ".join(f) for f in facts])
         return c_id, []
 
     if output == 'list':

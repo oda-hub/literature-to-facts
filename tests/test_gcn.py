@@ -18,6 +18,21 @@ def parse_gcn(i):
     return F
 
 
+def parse_atel(i):
+    import facts.atel as a
+    import facts.core as c
+
+    A = {int(v['atelid']):v for v in a.list_entries()}[i]
+    F = c.workflows_for_input(dict(arg=A, arg_type=a.ATelEntry), output='dict')
+    logger.info(F)
+
+    for p, o in F.items():
+        print(":", p, o)
+
+    return F
+
+
+
 def test_iul():
     G = parse_gcn(20249)
 
@@ -38,3 +53,7 @@ def test_swift():
     G = parse_gcn(31182)
 
     assert G['paper:swift_trigger_id'] == "1088376"
+
+
+def test_atel_2sources():
+    parse_atel(15100)
