@@ -1,3 +1,4 @@
+import pytest
 import logging
 
 from facts.arxiv import list_entries
@@ -20,26 +21,36 @@ def parse_gcn(i) -> dict:
     return F
 
 
-def parse_atel(i) -> dict:
+def parse_atel(i):
     import facts.atel as a
     import facts.core as c
 
-    G = None
-    for _G in a.list_entries():
-        if _G['atelid'] == str(i):
-            G = _G
-            break
-
-    if G is None:
-        raise RuntimeError
-
-    F = c.workflows_for_input(dict(arg=G, arg_type=a.ATelEntry), output='dict')
-    logger.info(f"workflows for input: {F}")
-
-    for p, o in F.items():
-        print(":", p, o)
+    A = {int(v['atelid']):v for v in a.list_entries()}[i]
+    F = c.workflows_for_input(dict(arg=A, arg_type=a.ATelEntry), output='dict')
+    logger.info(F)
 
     return F
+
+# def parse_atel(i) -> dict:
+#     import facts.atel as a
+#     import facts.core as c
+
+#     G = None
+#     for _G in a.list_entries():
+#         if _G['atelid'] == str(i):
+#             G = _G
+#             break
+
+#     if G is None:
+#         raise RuntimeError
+
+#     F = c.workflows_for_input(dict(arg=G, arg_type=a.ATelEntry), output='dict')
+#     logger.info(f"workflows for input: {F}")
+
+#     for p, o in F.items():
+#         print(":", p, o)
+
+#     return F
 
 def test_iul():
     G = parse_gcn(20249)
@@ -52,10 +63,18 @@ def test_fermirt():
 
     assert G['paper:grb_isot'].strip("\"") == "2020-10-20T17:33:54"
 
+
 def test_swift():
     G = parse_gcn(28666)
 
     assert G['paper:grb_isot'].strip("\"") == "2020-10-17T09:46:31"
+
+    G = parse_gcn(31182)
+
+    assert G['paper:swift_trigger_id'] == 1088376
+
+
+
 
 def test_gbm_v2():
     G = parse_gcn(30585)
@@ -114,14 +133,15 @@ def test_icecube():
 def test_icecube_follow_up():
     G = parse_gcn(31120)
     
-    assert G['paper:mentions_named_event'] == 'IceCube-211123A'
+    assert G['paper:mentions_named_event'] == ['IceCube-211123A']
 
 
+@pytest.mark.skip(reason='long')
 def test_learn_gcns():
     import facts.core
     import facts.gcn
 
-    t = facts.core.workflows_by_input(1, input_types=[facts.gcn.GCNText])
+    t = facts.core.workflows_by_input(1, input_types=[facts.gcn.GCNText], max_inputs=10)
     
 
 def test_atel_long_frb_name():
@@ -149,7 +169,7 @@ def test_hawc():
     G = parse_gcn(31106) 
 
     assert G['paper:grb_isot'].strip("\"") == "2021-11-23T03:52:23.500000"
-    assert G['paper:mentions_named_hawc'] == "HAWC-211123A"
+    assert G['paper:mentions_named_hawc'] == ["HAWC-211123A"]
     assert G['paper:hawc_ra'] == 34.12
     assert G['paper:hawc_dec'] == -8.05
 
@@ -166,3 +186,8 @@ def test_many_named():
 
     assert G['paper:mentions_named_event'] == ['IC211125A', 'IceCube-211125A']
     
+
+def test_atel_2sources():
+    G = parse_atel(15100)
+
+    assert G['paper:mentions_named_event'] == ['IceCube-211208A', 'PKS0735+17']

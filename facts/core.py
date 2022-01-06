@@ -143,7 +143,7 @@ def workflows_for_input(entry, output: str='list') -> typing.Union[dict, tuple, 
     raise Exception(f"unknown output {output}")
 
 
-def workflows_by_input(nthreads=1, input_types=None):
+def workflows_by_input(nthreads=1, input_types=None, max_inputs=None):
     logger.info("searching for input list...")
 
     collected_inputs = []
@@ -172,6 +172,10 @@ def workflows_by_input(nthreads=1, input_types=None):
             logger.debug(f"{Fore.BLUE} input: {Fore.MAGENTA} {str(arg):.100s} {Style.RESET_ALL} {Style.RESET_ALL}")
          
         logger.info("collected %d arguments", len(collected_inputs))
+
+        if max_inputs is not None and len(collected_inputs) > max_inputs:
+            logger.warning(f"selecting only %s", max_inputs)
+            break
 
     logger.info(f"inputs search done in in {time.time()-t0}")
 

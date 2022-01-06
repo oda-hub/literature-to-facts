@@ -192,6 +192,23 @@ def swift_detected(gcntext: GCNText):  # ->$
 
     return d
 
+@workflow
+def swift_trigger_id(gcntext: GCNText):  # ->$                                                                                                                                                                
+    d = {} # type: typing.Dict[str, typing.Union[str, int]]
+
+    T = re.sub("\n", " ", gcntext, re.M | re.S)
+    r = re.search(r"SUBJECT: .*?Swift detection", 
+                  T)
+    
+    if r is not None:
+        r_t = re.search('trigger=([0-9]+)', T)
+        if r_t is not None:
+            d['swift_trigger_id'] = int(r_t.group(1))
+            d['detected_by'] = "swift"
+    
+    return d
+
+
 
 @workflow
 def gcn_meta(gcntext: GCNText):  # ->

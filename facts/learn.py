@@ -3,7 +3,7 @@ import typing
 from concurrent import futures
 import odakb.sparql # type: ignore
 import re
-import sys
+import os
 import json
 import importlib
 from datetime import datetime
@@ -155,6 +155,76 @@ def contemplate():
             ))
 
     json.dump(s, open("grb_gcn_reaction_summary.json", "w"))
+
+
+@cli.command()
+def parse_notices():
+    # just swift for now
+
+    fn = f"swift_grbs_{time.strftime(r'%Y%m%d%h')}.html"
+    if os.path.exists(fn):
+        page = open(fn).read()
+    else:
+        page = requests.get('https://gcn.gsfc.nasa.gov/swift_grbs.html').text
+        with open(fn, "w") as f:
+            f.write(page)
+
+
+    col_names = None
+
+    entries = []
+
+    for row in re.findall("<tr.*?>(.*?)</tr>", page, re.S | re.M):
+        
+        if col_names is None:
+            _col_names = []
+            logger.info("col name row")
+            for col in re.findall("<th.*?>(.*?)</th>", row, re.S | re.M):                
+                _col_names.append(re.sub("[^a-z0-9]+", "_", col.lower()))
+            if len(_col_names) > 2:
+                col_names = _col_names
+        else:        
+            d = {}
+            for i, col in enumerate(re.findall("<td.*?>(.*?)</td>", row, re.S | re.M)):
+                d[col_names[i]] = re.sub("<.*?>", "", col)
+
+            try:
+                d['event_isot'] = "20" + d['date_yy_mm_dd'].replace('/', '-') + "T" + d['time_ut']
+            except:
+                logger.warning("problem with entry: %s", json.dumps(d, indent=4, sort_keys=True))
+                continue
+
+            entries.append(d)
+
+    json.dump(entries, open('entries.json', "w"))
+
+    G = rdflib.Graph()
+    paper_ns = rdflib.Namespace('https://odahub.io/ontology/paper/')
+    G.bind('paper', paper_ns)
+
+    for entry in entries:
+        
+        entry_id = paper_ns[f"swift_notice_trigger_{entry['trig']}"]
+        
+        for k, v in entry.items():
+            if k in [
+                "bat_dec",
+                "bat_error",
+                "bat_ra",
+                "date_yy_mm_dd",
+                "event_isot",
+                "time_ut",
+                "trig",
+                "xrt_dec",
+                "xrt_error",
+                "xrt_ra",
+            ]:
+                G.add((entry_id, paper_ns["swift_" + k], rdflib.Literal(v) ))
+
+    with open("swift_notices.ttl", "w") as f:
+        f.write(G.serialize(format='turtle'))
+
+
 
 
 if __name__ == "__main__":
