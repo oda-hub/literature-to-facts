@@ -444,6 +444,15 @@ def integral_ul(gcntext: GCNText):
     return {}
 
 
+@workflow
+def clearly_detected_afterglow(gcntext: GCNText):
+    text = re.sub(r"[ \n\r]+", " ", gcntext)
+    if re.search("clearly detected", text) and re.search("afterglow", text):
+        return dict(
+                    reports_characteristic='http://odahub.io/ontology/afterglow',
+                )
+    return {}
+
 
 
 
@@ -546,6 +555,7 @@ def authors(gcntext: GCNText):
                     gcn_authors=r.groups()[0].replace("\n", " ").strip(),
                 )
     return {}
+
 
 
 

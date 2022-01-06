@@ -63,14 +63,23 @@ def parse_html(html):
 
 
 @cli.command('fetch')
+#TODO: control all vs recent
 def fetch():
     index = requests.get('http://www.astronomerstelegram.org/').text
+    #index = requests.get('http://www.astronomerstelegram.org/?displayall').text
+    # index = open("The Astronomer's Telegram.html").read()
 
+    print('got index of', len(index))
+        
     es=[]
-    for l in re.findall(r'<TR valign=top><TD  class="num"  >(\d+)</TD>'+
-                        r'<TD class="title"><A HREF="(http.*?)">(.*?)</A></TD>'+
-                        r'<TD  class="author" valign=top>(.*?)<BR><EM>(.*?)</EM></TD></TR>',
-                        index):
+    # for l in re.findall(r'<TR valign=top><TD  class="num"  >(\d+)</TD>'+
+    #                     r'<TD class="title"><A HREF="(http.*?)">(.*?)</A></TD>'+
+    #                     r'<TD  class="author" valign=top>(.*?)<BR><EM>(.*?)</EM></TD></TR>',
+    for l in re.findall((r'<tr valign="top"><td class="num">(\d+)</td>'
+                         r'<td class="title"><a href="(.*?)">(.*?)</a></td>'
+                         r'<td class="author" valign="top">(.*?)<br><em>(.*?)</em></td></tr>'),
+                        index,
+                        re.I):
         entry = dict(zip(['atelid', 'url', 'title', 'authors', 'date'], l))
         logging.debug("%s", entry)
         es.append(entry)
