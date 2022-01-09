@@ -22,6 +22,9 @@ def daily(ctx, one_shot):
             {'name':'publish', 'f': lambda:ctx.invoke(facts.learn.publish), 'period_s': 3600, 'last': 0},
         ]
 
+    failures = []
+    sleep_s_on_failure = 13
+
     while True:
         sleep_seconds = 301
 
@@ -32,8 +35,16 @@ def daily(ctx, one_shot):
                 print(f"{t['name']}: age {age} < period {t['period_s']}: too early, will run in {t['period_s'] - age}")
             else:
                 print(f"{t['name']}: age {age} > period {t['period_s']}: time to run, overdue by {-t['period_s'] +age}")
-                t['f']()
-                t['last'] = now
+                try:
+                    t['f']()
+                    t['last'] = now
+                except Exception as e:
+                    failures.append(dict(
+                        exception=e,
+                        time=time.time(),
+                    ))
+                    time.sleep(sleep_s_on_failure)
+                    
 
         if one_shot:
             break
