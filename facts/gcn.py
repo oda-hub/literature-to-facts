@@ -471,6 +471,15 @@ def clearly_detected_afterglow(gcntext: GCNText):
     return {}
 
 
+@workflow
+def afterglow(gcntext: GCNText):
+    text = re.sub(r"[ \n\r]+", " ", gcntext)
+    if re.search("afterglow", text):
+        return dict(
+                    reports_characteristic='http://odahub.io/ontology/afterglow',
+                )
+    return {}
+
 
 
 @workflow
