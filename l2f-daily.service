@@ -1,0 +1,9 @@
+[Unit]
+Description=Literature to facts daily
+
+[Service]
+Type=simple 
+ExecStart=/home/savchenk/.pyenv/shims/l2f-tools daily
+
+[Install]
+WantedBy=default.target
