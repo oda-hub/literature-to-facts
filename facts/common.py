@@ -20,14 +20,22 @@ def mentions_grblike(title, body):  # ->$
     d = defaultdict(list) 
 
     for text in title, body:
-        for r in re.findall(r'\b(IceCube|IC|GRB|FRB|PKS|Mrk|HAWC)([ -]?)([0-9\.\-\+]{2,}[A-Z]?)\b', text):
-            full_name = f"{r[0]}{r[1]}{r[2]}"
-            d['mentions_named_event'].append(full_name.replace(' ', ''))
-            d['mentions_named_event_type'].append(r[0])
+        for pattern, name_format in [
+                (r'\b(IceCube|IC|GRB|FRB|PKS|Mrk|HAWC)([ -]?)([0-9\.\-\+]{2,}[A-Z]?)\b', "{}{}{}"),
+                (r'\b(AT[0-9]{4}[a-z]{3})\b', "{}"),
+                (r'\b(ZTF[0-9]{2}[a-z]{7})\b', "{}")
+            ]:
+        
+            for r in re.findall(pattern, text):
+                if isinstance(r, str):
+                    r = [r]
+                full_name = name_format.format(*r)
+                d['mentions_named_event'].append(full_name.replace(' ', ''))
+                d['mentions_named_event_type'].append(r[0])
 
-            d[f'mentions_named_{r[0].lower()}'].append(full_name.replace(' ', ''))
-    
+                d[f'mentions_named_{r[0].lower()}'].append(full_name.replace(' ', ''))    
     return d
+
 
 def mentions_keyword(title, body):  # ->$                                                                                                                                                                
     d = {} # type: typing.Dict[str, typing.Union[str, int]]    

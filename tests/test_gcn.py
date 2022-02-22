@@ -191,3 +191,9 @@ def test_atel_2sources():
     G = parse_atel(15100)
 
     assert G['paper:mentions_named_event'] == ['IceCube-211208A', 'PKS0735+17']
+
+
+def test_gcn_tns():
+    G = parse_gcn(31627)
+
+    assert G['paper:mentions_named_event'] == ['AT2022cmc', 'ZTF22aaajecb']
