@@ -5,5 +5,8 @@ Description=Literature to facts daily
 Type=simple 
 ExecStart=/home/savchenk/.pyenv/shims/l2f-tools daily
 
+Restart=always
+RestartSec=5s
+
 [Install]
 WantedBy=default.target
