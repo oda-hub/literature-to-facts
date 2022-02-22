@@ -195,5 +195,7 @@ def test_atel_2sources():
 
 def test_gcn_tns():
     G = parse_gcn(31627)
-
     assert G['paper:mentions_named_event'] == ['AT2022cmc', 'ZTF22aaajecb']
+
+    G = parse_gcn(31626)
+    assert G['paper:mentions_named_event'] == ['AT2022cmc', 'GRB220211A', 'ZTF22aaajecb', 'ZTF22aaajecp']

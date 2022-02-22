@@ -22,18 +22,20 @@ def mentions_grblike(title, body):  # ->$
     for text in title, body:
         for pattern, name_format in [
                 (r'\b(IceCube|IC|GRB|FRB|PKS|Mrk|HAWC)([ -]?)([0-9\.\-\+]{2,}[A-Z]?)\b', "{}{}{}"),
-                (r'\b(AT[0-9]{4}[a-z]{3})\b', "{}"),
-                (r'\b(ZTF[0-9]{2}[a-z]{7})\b', "{}")
+                (r'\b(AT) *?([0-9]{4}[a-z]{3})\b', "{}{}"),
+                (r'\b(ZTF)([0-9]{2}[a-z]{7})\b', "{}{}")
             ]:
         
             for r in re.findall(pattern, text):
                 if isinstance(r, str):
                     r = [r]
-                full_name = name_format.format(*r)
-                d['mentions_named_event'].append(full_name.replace(' ', ''))
-                d['mentions_named_event_type'].append(r[0])
 
-                d[f'mentions_named_{r[0].lower()}'].append(full_name.replace(' ', ''))    
+                full_name = name_format.format(*r).replace(' ', '')
+                obj_kind_type = r[0]
+                d['mentions_named_event'].append(full_name)
+                d['mentions_named_event_type'].append(obj_kind_type)
+
+                d[f'mentions_named_{obj_kind_type.lower()}'].append(full_name)
     return d
 
 
