@@ -9,3 +9,5 @@ data
 dist
 *.egg-info
 .snakemake
+debug.ttl
+degoogled.html
