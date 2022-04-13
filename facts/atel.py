@@ -1,3 +1,4 @@
+import email.parser
 import logging
 import typing
 import re
@@ -61,10 +62,61 @@ def parse_html(html):
 
     json.dump(es, open('atels.json','w'))
 
+def atel_cache_fn(t):
+    return os.path.join(os.getenv("HOME", "/tmp"), f".cache/atels/{t}.txt")
+
+def parse_atel_email(f):
+    message = email.parser.BytesParser().parse(f)
+    logger.debug('found message payload %s', message.get_payload())
+    atel_text = message.get_payload()
+
+    entry = dict()
+
+    for atel_field, field, endt in [
+        ('Title', 'title', 'Author:'),
+        ('Author', 'authors', 'Queries:'),
+        ('Queries', 'submitter_email', 'Posted:'),
+        ('Posted', 'date', 'Subjects:'),
+        ('Subjects', 'tags', '\n\n')
+    ]:                    
+        entry[field] = re.search(f"{atel_field}:(.*?)(?={endt})", atel_text, re.S).group(1)
+        entry[field] = re.sub("[\t\r\n]+", " ", entry[field]).strip()
+
+    entry['authors'] = entry['authors'].split(";", 1)[-1].strip()
+    entry['atelid'] = re.search(r"ATEL #(\d+)", atel_text).group(1).strip()
+
+    entry['url'] = f"https://www.astronomerstelegram.org/?read={entry['atelid']}"
+
+    entry['body'] = re.search(r"Subjects:.*?\n\n(.*?)[=\-]{20,}", atel_text, re.S).group(1)
+    entry['body'] = re.sub("[\n\r\t ]+", " ", entry['body'])
+
+    logging.debug("%s", json.dumps(entry, indent=4, sort_keys=True))
+
+    return entry
+
+def parse_atel_cache_id(atelid):
+    with open(atel_cache_fn(atelid), "rb") as f:
+        return parse_atel_email(f)
 
 @cli.command('fetch')
 #TODO: control all vs recent
-def fetch():
+def fetch():    
+    es = []
+
+    for fn in glob.glob(atel_cache_fn("*")):
+        # entry = dict(zip(['atelid', 'url', 'title', 'authors', 'date'], l))
+        # logging.debug("%s", entry)
+        # es.append(entry)
+        with open(fn, "rb") as f:            
+            es.append(parse_atel_email(f))
+            
+        # break
+
+    json.dump(es, open('atels.json','w'))
+
+@cli.command('fetch-web')
+#TODO: control all vs recent
+def fetch_web():
     index = requests.get('http://www.astronomerstelegram.org/').text
     #index = requests.get('http://www.astronomerstelegram.org/?displayall').text
     # index = open("The Astronomer's Telegram.html").read()
@@ -84,16 +136,17 @@ def fetch():
         logging.debug("%s", entry)
         es.append(entry)
 
+
     json.dump(es, open('atels.json','w'))
 
 @workflow
 def mentions_keyword(entry: ATelEntry):  # ->
-    return common.mentions_keyword(entry['title'], "")
+    return common.mentions_keyword(entry['title'], entry['body'])
 
 
 @workflow
 def mentions_named(entry: ATelEntry):  # ->
-    return common.mentions_grblike(entry['title'], "")
+    return common.mentions_grblike(entry['title'], entry['body'])
 
 
 @workflow

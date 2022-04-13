@@ -147,13 +147,13 @@ def test_learn_gcns():
 def test_atel_long_frb_name():
     G = parse_atel(15055)
 
-    assert G['paper:mentions_named_event'] == 'FRB20211122A'
+    assert G['paper:mentions_named_event'] == ['FRB20211122A']
     
 
 def test_atel_pks():
     G = parse_atel(15058)
 
-    assert G['paper:mentions_named_event'] == 'PKS0903-57'
+    assert G['paper:mentions_named_event'] == ['PKS0903-57']
     
 
 def test_gbm_allnamed():
@@ -178,7 +178,7 @@ def test_afterglow():
     G = parse_gcn(31373) 
 
     assert G['paper:mentions_named_grb'] == ["GRB220101A"]
-    assert G['paper:reports_characteristic'] == 'http://odahub.io/ontology/afterglow'
+    assert G['paper:reports_characteristic'] == ['http://odahub.io/ontology/afterglow']
     
 
 def test_many_named():
@@ -190,7 +190,7 @@ def test_many_named():
 def test_atel_2sources():
     G = parse_atel(15100)
 
-    assert G['paper:mentions_named_event'] == ['IceCube-211208A', 'PKS0735+17']
+    assert G['paper:mentions_named_event'] == ['IceCube-170922A', 'IceCube-211208A', 'IceCube-2112108A', 'PKS0735+17']
 
 
 def test_gcn_tns():
