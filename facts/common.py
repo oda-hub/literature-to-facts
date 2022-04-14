@@ -22,11 +22,15 @@ def relevant_keywords():
 def cites_atel_gcn(title, body): 
     d = defaultdict(list)
 
-    for prefix in "atel", "gcn":
+    for kind, prefixes in {
+        "atel": ["atel"], 
+        "gcn": ['gcn circ.', 'gcn circ', 'gcnc', 'gcn']
+        }.items():
         for text in title, body:
-            for pid in re.findall(f"{prefix} *?" + r"#(\d+)", text, re.I):
-                d[f'cites_{prefix}_id'] = pid
-                d[f'cites'].append(paperid_to_uri(prefix, pid))
+            for prefix in prefixes:
+                for pid in re.findall(f"{prefix} *?" + r"#?(\d{3,})", text, re.I):
+                    d[f'cites_{kind}_id'] = pid
+                    d[f'cites'].append(paperid_to_uri(kind, pid))
         
     return d
 

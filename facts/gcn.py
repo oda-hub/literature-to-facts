@@ -473,6 +473,11 @@ def clearly_detected_afterglow(gcntext: GCNText):
 
 
 @workflow
+def cites(gcntext: GCNText):  # ->
+    return common.cites_atel_gcn("", gcntext)
+
+
+@workflow
 def afterglow(gcntext: GCNText):
     text = re.sub(r"[ \n\r]+", " ", gcntext)
     if re.search("afterglow", text):

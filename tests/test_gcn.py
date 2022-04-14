@@ -179,6 +179,12 @@ def test_afterglow():
 
     assert G['paper:mentions_named_grb'] == ["GRB220101A"]
     assert G['paper:reports_characteristic'] == ['http://odahub.io/ontology/afterglow']
+    assert G['paper:cites'] == ['http://odahub.io/ontology/paper#gcn31347', 
+                                'http://odahub.io/ontology/paper#gcn31350', 
+                                'http://odahub.io/ontology/paper#gcn31351', 
+                                'http://odahub.io/ontology/paper#gcn31354', 
+                                'http://odahub.io/ontology/paper#gcn31360', 
+                                'http://odahub.io/ontology/paper#gcn31372']
     
 
 def test_many_named():
@@ -186,6 +192,12 @@ def test_many_named():
 
     assert G['paper:mentions_named_event'] == ['IC211125A', 'IceCube-211125A']
     
+
+def test_gcnc_citations():
+    G = parse_gcn(31901) 
+
+    assert G['paper:cites'] == ['http://odahub.io/ontology/paper#gcn31880', 'http://odahub.io/ontology/paper#gcn31881', 'http://odahub.io/ontology/paper#gcn31882', 'http://odahub.io/ontology/paper#gcn31885', 'http://odahub.io/ontology/paper#gcn31887', 'http://odahub.io/ontology/paper#gcn31891', 'http://odahub.io/ontology/paper#gcn31898']
+
 
 def test_atel_2sources():
     G = parse_atel(15100)
