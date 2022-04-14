@@ -35,6 +35,12 @@ def atel_date(entry: ATelEntry) -> dict:  # date
 
     return dict(timestamp=t)
 
+
+@workflow
+def atel_tags(entry: ATelEntry) -> dict:  # date    
+    return dict(topics=[tag.strip().lower() for tag in entry['tags'].split(',')])
+
+
 @cli.command('parse-html')
 @click.argument("html")
 def parse_html(html):
@@ -150,6 +156,11 @@ def mentions_named(entry: ATelEntry):  # ->
 
 
 @workflow
+def cites(entry: ATelEntry):  # ->
+    return common.cites_atel_gcn(entry['title'], entry['body'])
+
+
+@workflow
 def basic_meta(entry: ATelEntry):  # ->$                                                                                
     return dict(
             location=entry['url'],
@@ -165,10 +176,9 @@ def list_entries() -> typing.List[ATelEntry]:
 
     return es
 
-
 @workflow
 def identity(entry: ATelEntry) -> str:
-    return 'http://odahub.io/ontology/paper#atel'+entry['atelid'].split("/")[-1]
+    return common.paperid_to_uri('atel', int(entry['atelid'].split("/")[-1]))
 
 @cli.command("list")
 def listthem():

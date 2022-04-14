@@ -4,6 +4,10 @@ import typing
 from facts.core import workflow
 
 
+def paperid_to_uri(paper_kind, paper_id):
+    return f"http://odahub.io/ontology/paper#{paper_kind}{int(paper_id):d}"
+    
+
 def relevant_keywords():
     # TODO: fetch from KG, cache with expiration
     return [ 
@@ -15,10 +19,18 @@ def relevant_keywords():
         ]
 
 
-# def mentions_atel(title, body):  # ->$                                                                                                                                                                
-#     pass
+def cites_atel_gcn(title, body): 
+    d = defaultdict(list)
 
-def mentions_grblike(title, body):  # ->$                                                                                                                                                                
+    for prefix in "atel", "gcn":
+        for text in title, body:
+            for pid in re.findall(f"{prefix} *?" + r"#(\d+)", text, re.I):
+                d[f'cites_{prefix}_id'] = pid
+                d[f'cites'].append(paperid_to_uri(prefix, pid))
+        
+    return d
+
+def mentions_grblike(title, body):
     d = defaultdict(list) 
 
     for text in title, body:

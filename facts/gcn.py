@@ -54,6 +54,7 @@ def fetch_tar():
     logger.debug("https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz")
     os.system("curl https://gcn.gsfc.nasa.gov/gcn3/all_gcn_circulars.tar.gz | tar xvzf -")
 
+
 @workflow
 def identity(gcntext: GCNText):
     r = re.search(f"NUMBER:(.*)", gcntext)
@@ -65,7 +66,7 @@ def identity(gcntext: GCNText):
     else:
         gcnid = int(r.groups()[0])
 
-    return f"http://odahub.io/ontology/paper#gcn{gcnid:d}"
+    return common.paperid_to_uri('gcn', gcnid)
 
 @workflow
 def gcn_list_recent() -> typing.Generator[GCNText, None, None]:

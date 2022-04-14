@@ -192,6 +192,14 @@ def test_atel_2sources():
 
     assert G['paper:mentions_named_event'] == ['IceCube-170922A', 'IceCube-211208A', 'IceCube-2112108A', 'PKS0735+17']
 
+    assert G['paper:topics'] == ['agn', 'blazar', 'neutrinos', 'optical', 'request for observations']
+
+    assert G['paper:cites_atel_id'] == '15099'
+    assert G['paper:cites_gcn_id'] == '31191'
+    assert G['paper:cites'] == ['http://odahub.io/ontology/paper#atel15098',
+                                'http://odahub.io/ontology/paper#atel15099',
+                                'http://odahub.io/ontology/paper#gcn31191']
+    
 
 def test_gcn_tns():
     G = parse_gcn(31627)
