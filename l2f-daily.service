@@ -3,7 +3,7 @@ Description=Literature to facts daily
 
 [Service]
 Type=simple 
-ExecStart=/home/savchenk/.pyenv/shims/l2f-tools daily
+ExecStart=/home/savchenk/miniconda-recent/bin/l2f tools daily
 
 Restart=always
 RestartSec=5s
